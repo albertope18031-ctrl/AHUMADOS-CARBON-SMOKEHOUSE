@@ -7,9 +7,14 @@ import CustomizationModal from './components/CustomizationModal';
 import CartDrawer from './components/CartDrawer';
 import MobileBottomCart from './components/MobileBottomCart';
 import OrderSuccessModal from './components/OrderSuccessModal';
+import TableServiceBar from './components/TableServiceBar';
+import CallWaiterModal from './components/CallWaiterModal';
+import RequestBillModal from './components/RequestBillModal';
+import ToastNotification from './components/ToastNotification';
 import Footer from './components/Footer';
 import { Receipt, Flame } from 'lucide-react';
 import { CATEGORIES, DISHES } from './data/menuData';
+import { sendServiceNotification } from './utils/serviceNotifications';
 
 export default function App() {
   // 1. Detección automática de mesa vía URL (?mesa=4 o ?table=4) o localStorage
@@ -63,6 +68,21 @@ export default function App() {
   });
 
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+
+  // 3. Módulo de Asistencia en Sala (Llamar mesero / Pedir cuenta / Toasts / Cooldown)
+  const [isCallWaiterOpen, setIsCallWaiterOpen] = useState(false);
+  const [isRequestBillOpen, setIsRequestBillOpen] = useState(false);
+  const [waiterCooldown, setWaiterCooldown] = useState(0);
+  const [activeToast, setActiveToast] = useState(null);
+
+  // Temporizador de bloqueo (cooldown de 75 segundos)
+  useEffect(() => {
+    if (waiterCooldown <= 0) return;
+    const interval = setInterval(() => {
+      setWaiterCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [waiterCooldown]);
 
   // Filtrado de platillos según categoría activa
   const filteredDishes = DISHES.filter((dish) => dish.categoryId === activeCategory);
@@ -176,6 +196,29 @@ export default function App() {
     setIsSuccessModalOpen(true);
   };
 
+  // Despacho de llamada a mesero con notificación inmediata y cooldown
+  const handleConfirmCallWaiter = (requestDetails) => {
+    sendServiceNotification(requestDetails.tableNumber || tableNumber, 'call_waiter', requestDetails);
+    setWaiterCooldown(75); // Cooldown preventivo de 75 segundos
+    setIsCallWaiterOpen(false);
+    setActiveToast({
+      type: 'waiter',
+      title: 'Mesero Solicitado 🛎️',
+      message: `Solicitud enviada. Un mesero acudirá a la Mesa #${requestDetails.tableNumber || tableNumber || 'actual'} enseguida.`
+    });
+  };
+
+  // Despacho de solicitud de cuenta con notificación inmediata a caja
+  const handleConfirmBill = (billDetails) => {
+    sendServiceNotification(billDetails.tableNumber || tableNumber, 'request_bill', billDetails);
+    setIsRequestBillOpen(false);
+    setActiveToast({
+      type: 'bill',
+      title: 'Cuenta Solicitada 🧾',
+      message: `Hemos notificado a caja. En breve te llevarán la cuenta a la Mesa #${billDetails.tableNumber || tableNumber || 'actual'} con la terminal o cambio correspondiente.`
+    });
+  };
+
   return (
     <div className="min-h-screen bg-charcoal text-warmCream selection:bg-flameOrange selection:text-white flex flex-col justify-between">
       <div>
@@ -202,8 +245,8 @@ export default function App() {
           onSelectCategory={setActiveCategory}
         />
 
-        {/* Cuadrícula del catálogo con padding inferior garantizado (pb-28 md:pb-12) */}
-        <main className="max-w-7xl mx-auto px-4 py-8 pb-28 md:pb-12">
+        {/* Cuadrícula del catálogo con espacio suficiente para las botoneras flotantes */}
+        <main className="max-w-7xl mx-auto px-4 py-8 pb-36 md:pb-16">
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <div className="flex items-center gap-2">
@@ -275,6 +318,16 @@ export default function App() {
         onConfirmInAppOrder={handleConfirmInAppOrder}
       />
 
+      {/* Botonera Flotante de Asistencia en Sala (Llamar Mesero / Pedir Cuenta) */}
+      <TableServiceBar
+        isVisible={orderType === 'mesa' || Boolean(tableNumber)}
+        tableNumber={tableNumber}
+        onCallWaiter={() => setIsCallWaiterOpen(true)}
+        onRequestBill={() => setIsRequestBillOpen(true)}
+        hasBottomCart={cartCount > 0 || Boolean(activeConfirmedOrder)}
+        cooldownSeconds={waiterCooldown}
+      />
+
       {/* Barra flotante inferior fija en móvil (para ver orden actual o comanda activa) */}
       <MobileBottomCart
         cart={cart}
@@ -283,6 +336,31 @@ export default function App() {
         onOpenCart={() => setIsCartOpen(true)}
         activeOrder={activeConfirmedOrder}
         onOpenActiveTicket={() => setIsSuccessModalOpen(true)}
+      />
+
+      {/* Modal interactivo para Llamar al Mesero con selección de motivo */}
+      <CallWaiterModal
+        isOpen={isCallWaiterOpen}
+        tableNumber={tableNumber}
+        onClose={() => setIsCallWaiterOpen(false)}
+        onConfirmCall={handleConfirmCallWaiter}
+        cooldownSeconds={waiterCooldown}
+      />
+
+      {/* Modal interactivo para Pedir la Cuenta con selección de método de pago y propina */}
+      <RequestBillModal
+        isOpen={isRequestBillOpen}
+        tableNumber={tableNumber}
+        activeOrder={activeConfirmedOrder}
+        cartTotal={cartTotal}
+        onClose={() => setIsRequestBillOpen(false)}
+        onConfirmBill={handleConfirmBill}
+      />
+
+      {/* Notificación Toast Inmediata en pantalla */}
+      <ToastNotification
+        toast={activeToast}
+        onClose={() => setActiveToast(null)}
       />
 
       {/* Modal / Ticket Digital de Éxito In-App (Comanda Recibida en Cocina) */}
