@@ -27,7 +27,7 @@ export default function DishCard({ dish, onAddToCart, onCustomize }) {
   const formattedPrice = Number(dish.price || 0).toFixed(2);
 
   return (
-    <article className="bg-charcoalCard border border-charcoalBorder rounded-xl p-4 sm:p-5 flex flex-col justify-between hover:border-flameOrange/60 transition-all duration-200 shadow-md group">
+    <article className="bg-charcoalCard border border-charcoalBorder rounded-xl p-4 sm:p-5 h-full flex flex-col justify-between hover:border-flameOrange/60 transition-all duration-200 shadow-md group">
       <div>
         {/* Badge superior si existe */}
         {dish.badge && (
@@ -41,13 +41,13 @@ export default function DishCard({ dish, onAddToCart, onCustomize }) {
           {dish.name}
         </h3>
 
-        {/* Descripción gastronómica */}
-        <p className="text-warmMuted text-xs sm:text-sm mt-2 leading-relaxed line-clamp-3">
+        {/* Descripción gastronómica completa 100% visible sin line-clamp */}
+        <p className="text-warmCream/80 text-xs sm:text-sm mt-2 leading-relaxed">
           {dish.description}
         </p>
       </div>
 
-      {/* Pie de la tarjeta */}
+      {/* Pie de la tarjeta: siempre alineado al fondo */}
       <div className="mt-5 pt-4 border-t border-charcoalBorder/60 flex items-center justify-between gap-3">
         <div>
           <span className="text-flameOrange font-extrabold text-lg tracking-tight">
@@ -62,7 +62,7 @@ export default function DishCard({ dish, onAddToCart, onCustomize }) {
           aria-label={`Agregar ${dish.name} a la orden`}
         >
           <Plus className="w-4 h-4" />
-          <span>Agregar</span>
+          <span>+ Agregar</span>
         </button>
       </div>
     </article>

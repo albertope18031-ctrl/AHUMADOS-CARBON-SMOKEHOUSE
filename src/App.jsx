@@ -5,6 +5,7 @@ import CategoryFilter from './components/CategoryFilter';
 import DishCard from './components/DishCard';
 import CustomizationModal from './components/CustomizationModal';
 import CartDrawer from './components/CartDrawer';
+import MobileCartBar from './components/MobileCartBar';
 import Footer from './components/Footer';
 import { CATEGORIES, DISHES } from './data/menuData';
 
@@ -114,7 +115,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-charcoal text-warmCream selection:bg-flameOrange selection:text-white flex flex-col justify-between">
       <div>
-        {/* Encabezado fijo con selector de modo y botón de orden */}
+        {/* Encabezado fijo con selector de modo y botón de orden en desktop */}
         <Header
           orderMode={orderType}
           setOrderMode={setOrderType}
@@ -133,8 +134,8 @@ export default function App() {
           onSelectCategory={setActiveCategory}
         />
 
-        {/* Cuadrícula del catálogo de platillos */}
-        <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Cuadrícula del catálogo de platillos con padding inferior para no tapar con la barra móvil */}
+        <main className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <h2 className="text-xl sm:text-2xl font-black text-warmCream tracking-tight">
@@ -179,6 +180,13 @@ export default function App() {
         onRemoveItem={handleRemoveItem}
         orderType={orderType}
         setOrderType={setOrderType}
+      />
+
+      {/* Barra flotante inferior exclusiva para móvil */}
+      <MobileCartBar
+        cartCount={cartCount}
+        cartTotal={cartTotal}
+        onOpenCart={() => setIsCartOpen(true)}
       />
 
       {/* Pie de página con datos de contacto y sello de autoridad */}
