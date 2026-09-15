@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Flame, Trash2, Plus, Minus, Send, ShoppingBag, Utensils, Clock, User, Hash } from 'lucide-react';
+import { X, Flame, Trash2, Plus, Minus, Send, ShoppingBag, Utensils, Clock, User, Hash, Lock } from 'lucide-react';
 import { RESTAURANT_INFO } from '../data/menuData';
 
 export default function CartDrawer({
@@ -9,12 +9,23 @@ export default function CartDrawer({
   onUpdateQuantity,
   onRemoveItem,
   orderType = 'mesa',
-  setOrderType
+  setOrderType,
+  tableNumber = '',
+  setTableNumber,
+  isTableLocked = false,
+  onConfirmInAppOrder
 }) {
-  const [tableNumber, setTableNumber] = useState('');
+  const [internalTableNumber, setInternalTableNumber] = useState(tableNumber || '');
   const [customerName, setCustomerName] = useState('');
   const [pickupTime, setPickupTime] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Sincronizar tableNumber externo si cambia
+  useEffect(() => {
+    if (tableNumber) {
+      setInternalTableNumber(tableNumber);
+    }
+  }, [tableNumber]);
 
   // Manejador para cerrar con tecla Escape
   useEffect(() => {
@@ -38,6 +49,8 @@ export default function CartDrawer({
   const serviceFee = 0.0;
   const total = subtotal + serviceFee;
 
+  const currentTable = isTableLocked ? tableNumber : internalTableNumber;
+
   const handleSendOrder = () => {
     setErrorMessage('');
 
@@ -47,42 +60,52 @@ export default function CartDrawer({
     }
 
     if (orderType === 'mesa') {
-      if (!tableNumber.trim()) {
+      if (!currentTable.trim()) {
         setErrorMessage('Por favor especifica el Número de Mesa para llevarte tu orden.');
         return;
       }
-    } else {
-      if (!customerName.trim()) {
-        setErrorMessage('Por favor indica el nombre de quien recoge el pedido.');
-        return;
+
+      // Si el comensal está en mesa, confirmar in-app directamente
+      const now = new Date();
+      const formattedNowTime = now.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+
+      const orderData = {
+        folio: `#AC-${Math.floor(100 + Math.random() * 900)}`,
+        orderType: 'mesa',
+        tableNumber: currentTable.trim(),
+        items: [...cart],
+        subtotal,
+        serviceFee,
+        total,
+        timestamp: formattedNowTime,
+        date: now.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }),
+        estimatedTime: '15 - 25 min'
+      };
+
+      if (onConfirmInAppOrder) {
+        onConfirmInAppOrder(orderData);
       }
-      if (!pickupTime.trim()) {
-        setErrorMessage('Por favor indica la hora estimada de entrega.');
-        return;
-      }
+      return;
     }
 
-    // Formatear hora actual para consumo en mesa
-    const now = new Date();
-    const formattedNowTime = now.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
+    // Modalidad Para Llevar: Envío por WhatsApp
+    if (!customerName.trim()) {
+      setErrorMessage('Por favor indica el nombre de quien recoge el pedido.');
+      return;
+    }
+    if (!pickupTime.trim()) {
+      setErrorMessage('Por favor indica la hora estimada de entrega.');
+      return;
+    }
 
-    const typeText =
-      orderType === 'mesa'
-        ? `Consumo en Mesa (Mesa #${tableNumber.trim()})`
-        : `Para Llevar a nombre de: ${customerName.trim()}`;
+    const typeText = `Para Llevar a nombre de: ${customerName.trim()}`;
+    const clientText = customerName.trim();
+    const timeText = pickupTime.trim();
 
-    const clientText =
-      orderType === 'mesa'
-        ? customerName.trim() ? customerName.trim() : `Mesa #${tableNumber.trim()}`
-        : customerName.trim();
-
-    const timeText = orderType === 'mesa' ? formattedNowTime : pickupTime.trim();
-
-    // Generar bloque de platillos detallado
     let itemsDetailText = '';
     cart.forEach((item) => {
       itemsDetailText += `${item.quantity}x ${item.name} ($${item.price})\n`;
@@ -99,7 +122,6 @@ export default function CartDrawer({
 
     const totalFormatted = total.toFixed(2);
 
-    // Mensaje con formato exacto solicitado
     const message = `🔥 *NUEVA ORDEN - AHUMADOS & CARBÓN SMOKEHOUSE* 🔥
 --------------------------------------------------
 📍 *Tipo:* ${typeText}
@@ -170,7 +192,7 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
                 }`}
               >
                 <span>🍽️</span>
-                <span>En Mesa</span>
+                <span>En Mesa {currentTable ? `(#${currentTable})` : ''}</span>
               </button>
               <button
                 type="button"
@@ -191,20 +213,36 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
           <div className="px-5 pt-3 pb-2">
             {orderType === 'mesa' ? (
               <div className="bg-charcoalCard/90 border border-charcoalBorder rounded-xl p-3">
-                <label
-                  htmlFor="cart-table-number"
-                  className="block text-xs font-bold text-warmCream mb-1 flex items-center gap-1.5"
-                >
-                  <Hash className="w-3.5 h-3.5 text-flameOrange" />
-                  Número de Mesa <span className="text-flameOrange">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label
+                    htmlFor="cart-table-number"
+                    className="text-xs font-bold text-warmCream flex items-center gap-1.5"
+                  >
+                    <Hash className="w-3.5 h-3.5 text-flameOrange" />
+                    Número de Mesa <span className="text-flameOrange">*</span>
+                  </label>
+                  {isTableLocked && (
+                    <span className="text-[10px] text-badgeGold bg-badgeGold/10 px-2 py-0.5 rounded border border-badgeGold/20 flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> Asignada por QR
+                    </span>
+                  )}
+                </div>
+
                 <input
                   id="cart-table-number"
                   type="text"
-                  value={tableNumber}
-                  onChange={(e) => setTableNumber(e.target.value)}
+                  value={currentTable}
+                  readOnly={isTableLocked}
+                  onChange={(e) => {
+                    if (!isTableLocked) {
+                      setInternalTableNumber(e.target.value);
+                      if (setTableNumber) setTableNumber(e.target.value);
+                    }
+                  }}
                   placeholder="Ej. Mesa 5"
-                  className="w-full bg-[#171717] border border-charcoalBorder rounded-lg px-3 py-2 text-sm text-warmCream placeholder:text-warmMuted/60 focus:outline-none focus:border-flameOrange transition-colors"
+                  className={`w-full bg-[#171717] border border-charcoalBorder rounded-lg px-3 py-2 text-sm text-warmCream placeholder:text-warmMuted/60 transition-colors ${
+                    isTableLocked ? 'cursor-not-allowed text-badgeGold font-bold bg-[#131313]' : 'focus:outline-none focus:border-flameOrange'
+                  }`}
                 />
               </div>
             ) : (
@@ -407,17 +445,33 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleSendOrder}
-                className="bg-flameOrange hover:bg-flameOrangeHover text-warmCream font-black py-4 rounded-xl text-center text-sm sm:text-base tracking-wide shadow-xl flex items-center justify-center gap-2 cursor-pointer w-full transition-all active:scale-[0.98]"
-              >
-                <span>ENVIAR PEDIDO A COCINA POR WHATSAPP 📲</span>
-              </button>
-
-              <p className="text-[11px] text-center text-warmMuted leading-tight">
-                Al enviar tu pedido se abrirá tu aplicación de WhatsApp lista para despachar tu orden directamente a cocina.
-              </p>
+              {orderType === 'mesa' ? (
+                <div>
+                  <button
+                    type="button"
+                    onClick={handleSendOrder}
+                    className="bg-flameOrange hover:bg-flameOrangeHover active:scale-[0.98] text-warmCream font-black py-4 rounded-xl text-center text-sm sm:text-base tracking-wide shadow-xl flex items-center justify-center gap-2 cursor-pointer w-full transition-all"
+                  >
+                    <span>CONFIRMAR PEDIDO A COCINA 🔥</span>
+                  </button>
+                  <p className="text-[11px] text-center text-warmMuted mt-1.5 leading-tight">
+                    Tu orden se enviará a cocina de inmediato y se generará tu comanda digital en pantalla.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <button
+                    type="button"
+                    onClick={handleSendOrder}
+                    className="bg-flameOrange hover:bg-flameOrangeHover active:scale-[0.98] text-warmCream font-black py-4 rounded-xl text-center text-sm sm:text-base tracking-wide shadow-xl flex items-center justify-center gap-2 cursor-pointer w-full transition-all"
+                  >
+                    <span>ENVIAR PEDIDO A COCINA POR WHATSAPP 📲</span>
+                  </button>
+                  <p className="text-[11px] text-center text-warmMuted mt-1.5 leading-tight">
+                    Al enviar tu pedido se abrirá WhatsApp lista para despachar tu pedido para recoger.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </aside>

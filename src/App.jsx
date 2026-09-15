@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import CategoryFilter from './components/CategoryFilter';
@@ -6,21 +6,68 @@ import DishCard from './components/DishCard';
 import CustomizationModal from './components/CustomizationModal';
 import CartDrawer from './components/CartDrawer';
 import MobileBottomCart from './components/MobileBottomCart';
+import OrderSuccessModal from './components/OrderSuccessModal';
 import Footer from './components/Footer';
+import { Receipt, Flame } from 'lucide-react';
 import { CATEGORIES, DISHES } from './data/menuData';
 
 export default function App() {
-  // Estados centralizados de la aplicación
-  const [cart, setCart] = useState([]);
+  // 1. Detección automática de mesa vía URL (?mesa=4 o ?table=4) o localStorage
+  const [tableNumber, setTableNumber] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const paramTable = params.get('mesa') || params.get('table');
+      if (paramTable) {
+        try {
+          localStorage.setItem('smokehouse_table', paramTable);
+        } catch (e) {}
+        return paramTable;
+      }
+      try {
+        return localStorage.getItem('smokehouse_table') || '';
+      } catch (e) {
+        return '';
+      }
+    }
+    return '';
+  });
+
+  const [isTableLocked, setIsTableLocked] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return Boolean(params.get('mesa') || params.get('table'));
+    }
+    return false;
+  });
+
+  // Modalidad de orden: si viene mesa en URL, se fuerza 'mesa'
   const [orderType, setOrderType] = useState('mesa');
+
+  // Estados del carrito y navegación
+  const [cart, setCart] = useState([]);
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]?.id || 'ahumados');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedDishForCustomization, setSelectedDishForCustomization] = useState(null);
 
+  // 2. Persistencia de comanda activa confirmada en mesa (ticket in-app)
+  const [activeConfirmedOrder, setActiveConfirmedOrder] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('smokehouse_active_order');
+        return saved ? JSON.parse(saved) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+
   // Filtrado de platillos según categoría activa
   const filteredDishes = DISHES.filter((dish) => dish.categoryId === activeCategory);
 
-  // Totales de la orden
+  // Totales de la orden activa en carrito
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -34,7 +81,7 @@ export default function App() {
     setSelectedDishForCustomization(null);
   };
 
-  // Agregar platillo directo (sin opciones o simple)
+  // Agregar platillo directo (sin opciones obligatorias)
   const handleDirectAddToCart = (dish) => {
     setCart((prev) => {
       const existingIndex = prev.findIndex(
@@ -112,16 +159,37 @@ export default function App() {
     setCart((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Confirmación In-App de la comanda en mesa (sin salir a WhatsApp)
+  const handleConfirmInAppOrder = (orderData) => {
+    setActiveConfirmedOrder(orderData);
+    try {
+      localStorage.setItem('smokehouse_active_order', JSON.stringify(orderData));
+      if (orderData.tableNumber) {
+        localStorage.setItem('smokehouse_table', orderData.tableNumber);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    // Vaciar el carrito actual tras confirmar la orden para evitar duplicaciones
+    setCart([]);
+    setIsCartOpen(false);
+    setIsSuccessModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-charcoal text-warmCream selection:bg-flameOrange selection:text-white flex flex-col justify-between">
       <div>
-        {/* Encabezado adaptativo: 1 fila en PC, 2 filas compactas en Móvil con botón circular de carrito */}
+        {/* Encabezado fijo con detección de mesa y acceso a comanda activa */}
         <Header
           orderMode={orderType}
           setOrderMode={setOrderType}
           cartCount={cartCount}
           cartTotal={cartTotal}
           onOpenCart={() => setIsCartOpen(true)}
+          tableNumber={tableNumber}
+          isTableLocked={isTableLocked}
+          activeOrder={activeConfirmedOrder}
+          onOpenActiveTicket={() => setIsSuccessModalOpen(true)}
         />
 
         {/* Hero visual compacto */}
@@ -138,16 +206,37 @@ export default function App() {
         <main className="max-w-7xl mx-auto px-4 py-8 pb-28 md:pb-12">
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-warmCream tracking-tight">
-                {CATEGORIES.find((c) => c.id === activeCategory)?.name || 'Platillos'}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl sm:text-2xl font-black text-warmCream tracking-tight">
+                  {CATEGORIES.find((c) => c.id === activeCategory)?.name || 'Platillos'}
+                </h2>
+                {tableNumber && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-flameOrange/15 border border-flameOrange/30 text-flameOrange text-xs font-bold">
+                    📍 Atendiendo Mesa #{tableNumber}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-warmMuted mt-0.5">
                 Platillos preparados a la brasa y fuego indirecto con leña de encino y mezquite.
               </p>
             </div>
-            <span className="self-start sm:self-auto text-xs font-semibold px-3 py-1 rounded-full bg-charcoalCard border border-charcoalBorder text-warmMuted">
-              {filteredDishes.length} platillos en esta categoría
-            </span>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              {activeConfirmedOrder && (
+                <button
+                  type="button"
+                  onClick={() => setIsSuccessModalOpen(true)}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-badgeGold/10 border border-badgeGold/30 text-badgeGold text-xs font-bold hover:bg-badgeGold/20 transition-all cursor-pointer"
+                >
+                  <Receipt className="w-3.5 h-3.5" />
+                  <span>Comanda {activeConfirmedOrder.folio} en Cocina</span>
+                </button>
+              )}
+
+              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-charcoalCard border border-charcoalBorder text-warmMuted">
+                {filteredDishes.length} platillos en esta categoría
+              </span>
+            </div>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -171,7 +260,7 @@ export default function App() {
         onConfirm={handleConfirmCustomization}
       />
 
-      {/* Carrito lateral deslizable (Drawer) */}
+      {/* Carrito lateral deslizable (Drawer) con soporte de confirmación in-app para mesa */}
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
@@ -180,15 +269,52 @@ export default function App() {
         onRemoveItem={handleRemoveItem}
         orderType={orderType}
         setOrderType={setOrderType}
+        tableNumber={tableNumber}
+        setTableNumber={setTableNumber}
+        isTableLocked={isTableLocked}
+        onConfirmInAppOrder={handleConfirmInAppOrder}
       />
 
-      {/* Barra flotante inferior fija exclusiva en móvil cuando hay al menos 1 producto */}
+      {/* Barra flotante inferior fija en móvil (para ver orden actual o comanda activa) */}
       <MobileBottomCart
         cart={cart}
         totalItems={cartCount}
         totalAmount={cartTotal}
         onOpenCart={() => setIsCartOpen(true)}
+        activeOrder={activeConfirmedOrder}
+        onOpenActiveTicket={() => setIsSuccessModalOpen(true)}
       />
+
+      {/* Modal / Ticket Digital de Éxito In-App (Comanda Recibida en Cocina) */}
+      <OrderSuccessModal
+        isOpen={isSuccessModalOpen}
+        order={activeConfirmedOrder}
+        onClose={() => setIsSuccessModalOpen(false)}
+        onNewRound={() => setIsSuccessModalOpen(false)}
+      />
+
+      {/* Botón flotante en Desktop para consultar ticket activo */}
+      {activeConfirmedOrder && (
+        <div className="hidden md:flex fixed bottom-6 right-6 z-40 animate-in slide-in-from-bottom-5">
+          <button
+            type="button"
+            onClick={() => setIsSuccessModalOpen(true)}
+            className="bg-charcoalCard/95 hover:bg-[#252525] border border-badgeGold/50 text-warmCream px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+          >
+            <span className="p-2 rounded-xl bg-badgeGold/15 text-badgeGold">
+              <Receipt className="w-5 h-5" />
+            </span>
+            <div className="text-left">
+              <span className="text-xs font-bold text-warmCream block">
+                Mesa #{activeConfirmedOrder.tableNumber} • Comanda en Cocina
+              </span>
+              <span className="text-[11px] text-badgeGold font-mono font-semibold">
+                {activeConfirmedOrder.folio} • Ver Ticket
+              </span>
+            </div>
+          </button>
+        </div>
+      )}
 
       {/* Pie de página con datos de contacto y sello de autoridad */}
       <Footer />
