@@ -64,20 +64,6 @@ export default function Header({
         <p className="text-[11px] sm:text-xs text-warmCream/90 font-medium tracking-tight truncate sm:text-clip mx-auto sm:mx-0">
           {RESTAURANT_INFO.status || "🟢 Abierto hoy • Fuego encendido hasta las 11:00 PM"}
         </p>
-
-        {/* Acceso a Comanda activa en barra superior (Desktop) */}
-        {activeOrder && (
-          <div className="hidden sm:flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onOpenActiveTicket}
-              className="text-[11px] text-badgeGold hover:underline flex items-center gap-1 font-semibold cursor-pointer"
-            >
-              <Receipt className="w-3 h-3" />
-              <span>Comanda {activeOrder.folio} en Cocina</span>
-            </button>
-          </div>
-        )}
       </div>
 
       {/* DISEÑO EN ESCRITORIO (md:flex o superior) */}
@@ -148,23 +134,12 @@ export default function Header({
           )}
         </div>
 
-        {/* Lado derecho: Botón ancho Ver Orden */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {activeOrder && (
-            <button
-              type="button"
-              onClick={onOpenActiveTicket}
-              className="px-3 py-1.5 rounded-lg bg-[#1a1a1a] border border-badgeGold/40 text-badgeGold hover:bg-[#222222] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Receipt className="w-3.5 h-3.5" />
-              <span>Ver Comanda</span>
-            </button>
-          )}
-
+        {/* Lado derecho: Botón Ver Orden en escritorio */}
+        <div className="hidden md:flex items-center gap-2 flex-shrink-0">
           <button
             type="button"
             onClick={onOpenCart}
-            className="bg-flameOrange hover:bg-flameOrangeHover text-warmCream px-3.5 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer"
+            className="bg-flameOrange hover:bg-flameOrangeHover text-warmCream px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer"
             aria-label="Ver orden actual"
           >
             <ShoppingBag className="w-4 h-4" />
@@ -199,33 +174,10 @@ export default function Header({
             </div>
           </div>
 
-          {/* Lado derecho: Acceso a Comanda activa + Botón circular del carrito */}
-          <div className="flex items-center gap-2">
-            {activeOrder && (
-              <button
-                type="button"
-                onClick={onOpenActiveTicket}
-                className="p-2 rounded-full bg-[#181818] border border-badgeGold/40 text-badgeGold shadow-sm flex items-center justify-center cursor-pointer active:scale-90"
-                aria-label="Ver comanda activa"
-                title="Ver comanda en preparación"
-              >
-                <Receipt className="w-4 h-4" />
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={onOpenCart}
-              className="relative p-2.5 rounded-full bg-charcoalCard border border-charcoalBorder text-warmCream hover:border-flameOrange transition-all active:scale-90 cursor-pointer shadow-md flex items-center justify-center"
-              aria-label={`Ver orden con ${cartCount} productos`}
-            >
-              <ShoppingBag className="w-5 h-5 text-warmCream" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-flameOrange text-warmCream text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in-75">
-                  {cartCount}
-                </span>
-              )}
-            </button>
+          {/* Lado derecho en móvil: Estado del restaurante limpio (sin botones de orden duplicados) */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-semibold select-none">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Abierto</span>
           </div>
         </div>
 

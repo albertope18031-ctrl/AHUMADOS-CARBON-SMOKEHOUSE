@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Flame, Trash2, Plus, Minus, Send, ShoppingBag, Utensils, Clock, User, Hash, Lock, CreditCard, FileText, ChevronDown } from 'lucide-react';
+import { X, Flame, Trash2, Plus, Minus, ShoppingBag, Lock } from 'lucide-react';
 import { RESTAURANT_INFO } from '../data/menuData';
 import { cleanTableNumber } from '../utils/textUtils';
 
@@ -10,7 +10,6 @@ export default function CartDrawer({
   onUpdateQuantity,
   onRemoveItem,
   orderType = 'mesa',
-  setOrderType,
   tableNumber = '',
   setTableNumber,
   isTableLocked = false,
@@ -18,10 +17,10 @@ export default function CartDrawer({
   onOpenInvoiceModal
 }) {
   const [internalTableNumber, setInternalTableNumber] = useState(tableNumber || '');
+  const [isEditingTable, setIsEditingTable] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [pickupTime, setPickupTime] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [isInvoiceAccordionOpen, setIsInvoiceAccordionOpen] = useState(false);
 
   // Sincronizar tableNumber externo si cambia
   useEffect(() => {
@@ -53,6 +52,7 @@ export default function CartDrawer({
   const total = subtotal + serviceFee;
 
   const currentTable = isTableLocked ? tableNumber : internalTableNumber;
+  const sanitizedTable = cleanTableNumber(currentTable);
 
   const handleSendOrder = () => {
     setErrorMessage('');
@@ -63,12 +63,12 @@ export default function CartDrawer({
     }
 
     if (orderType === 'mesa') {
-      if (!currentTable.trim()) {
+      if (!sanitizedTable) {
         setErrorMessage('Por favor especifica el Número de Mesa para llevarte tu orden.');
         return;
       }
 
-      // Si el comensal está en mesa, confirmar in-app directamente
+      // Confirmar comanda digital in-app
       const now = new Date();
       const formattedNowTime = now.toLocaleTimeString([], {
         hour: '2-digit',
@@ -79,7 +79,7 @@ export default function CartDrawer({
       const orderData = {
         folio: `#AC-${Math.floor(100 + Math.random() * 900)}`,
         orderType: 'mesa',
-        tableNumber: currentTable.trim(),
+        tableNumber: sanitizedTable,
         items: [...cart],
         subtotal,
         serviceFee,
@@ -148,27 +148,28 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Overlay oscuro desenfocado */}
+      {/* Overlay oscuro con desenfoque */}
       <div
         className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <aside className="w-screen max-w-md bg-charcoal border-l border-charcoalBorder shadow-2xl flex flex-col text-warmCream animate-in slide-in-from-right duration-300">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
+        <aside className="w-screen max-w-md bg-neutral-950 border-l border-neutral-800 shadow-2xl flex flex-col h-full text-white animate-in slide-in-from-right duration-300">
+          
           {/* Encabezado del Drawer */}
-          <div className="p-5 border-b border-charcoalBorder flex items-center justify-between bg-charcoalCard/50">
+          <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-900/60 shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-flameOrange/15 text-flameOrange border border-flameOrange/30">
+              <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
                 <Flame className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-warmCream leading-none">
-                  Tu Orden en Fuego
+                <h2 className="text-base sm:text-lg font-bold text-white leading-none">
+                  Tu Orden
                 </h2>
-                <span className="text-xs text-warmMuted mt-1 block">
-                  {cart.reduce((sum, item) => sum + item.quantity, 0)} {cart.length === 1 ? 'producto' : 'productos'} en la comanda
+                <span className="text-xs text-neutral-400 mt-1 block">
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)} {cart.length === 1 ? 'platillo' : 'platillos'} agregados
                 </span>
               </div>
             </div>
@@ -176,66 +177,71 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-full text-warmMuted hover:text-warmCream bg-[#171717] hover:bg-[#252525] border border-charcoalBorder transition-colors cursor-pointer"
+              className="p-2 rounded-full text-neutral-400 hover:text-white bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 transition-colors cursor-pointer"
               aria-label="Cerrar orden"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Información y datos del pedido según la modalidad activa en la cabecera */}
-          <div className="px-5 pt-4 pb-2">
+          {/* 3. Confirmación de Mesa Automática o Datos Para Llevar */}
+          <div className="px-4 sm:px-5 pt-3.5 pb-1 shrink-0">
             {orderType === 'mesa' ? (
-              <div className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-3.5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <span className="p-2 rounded-lg bg-flameOrange/15 text-flameOrange text-base">🍽️</span>
-                    <div>
-                      <span className="text-xs font-bold text-warmCream block">
-                        Servicio en Mesa
-                      </span>
-                      <span className="text-xs text-amber-400 font-semibold">
-                        {cleanTableNumber(currentTable)
-                          ? `📍 Mesa ${cleanTableNumber(currentTable)}`
-                          : '📍 Mesa no asignada'}
-                      </span>
+              <div className="space-y-2">
+                {sanitizedTable ? (
+                  /* Mesa ya asignada: Badge visual claro sin volver a pedir el input */
+                  <div className="bg-neutral-900/90 border border-neutral-800 rounded-xl p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-lg">📍</span>
+                      <div>
+                        <span className="text-[11px] text-neutral-400 block font-medium">Lugar de entrega:</span>
+                        <span className="text-sm font-bold text-amber-400">
+                          Pedido para Mesa {sanitizedTable}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  {isTableLocked ? (
-                    <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20 flex items-center gap-1 font-semibold">
-                      <Lock className="w-3 h-3" /> Fija por QR
-                    </span>
-                  ) : cleanTableNumber(currentTable) ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const nuevo = window.prompt("Ingresa o cambia tu número de mesa:", currentTable);
-                        if (nuevo !== null) {
-                          const cleaned = cleanTableNumber(nuevo);
+                    {isTableLocked ? (
+                      <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20 flex items-center gap-1 font-semibold">
+                        <Lock className="w-3 h-3" /> Fija por QR
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingTable(!isEditingTable)}
+                        className="text-xs font-semibold text-neutral-400 hover:text-white underline underline-offset-2 transition-colors cursor-pointer px-1 py-0.5"
+                      >
+                        {isEditingTable ? 'Listo' : '(Cambiar)'}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  /* Mesa no asignada: Input limpio y compacto de 1 sola línea */
+                  <div className="bg-neutral-900/90 border border-neutral-800 rounded-xl p-3">
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="cart-table-number" className="text-xs font-bold text-white whitespace-nowrap">
+                        Mesa # <span className="text-amber-400">*</span>:
+                      </label>
+                      <input
+                        id="cart-table-number"
+                        type="text"
+                        value={currentTable}
+                        onChange={(e) => {
+                          const cleaned = cleanTableNumber(e.target.value);
                           setInternalTableNumber(cleaned);
                           if (setTableNumber) setTableNumber(cleaned);
-                        }
-                      }}
-                      className="text-xs text-warmMuted hover:text-warmCream underline cursor-pointer p-1"
-                    >
-                      Cambiar
-                    </button>
-                  ) : null}
-                </div>
+                        }}
+                        placeholder="Ej. 4"
+                        className="flex-1 bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                )}
 
-                {/* Si aún no se ha ingresado número de mesa, input directo */}
-                {!cleanTableNumber(currentTable) && (
-                  <div className="pt-2 border-t border-neutral-800">
-                    <label
-                      htmlFor="cart-table-number"
-                      className="block text-xs font-bold text-warmCream mb-1 flex items-center gap-1.5"
-                    >
-                      <Hash className="w-3.5 h-3.5 text-flameOrange" />
-                      Indica tu Número de Mesa <span className="text-flameOrange">*</span>
-                    </label>
+                {/* Sub-formulario desplegable si el cliente desea cambiar la mesa */}
+                {isEditingTable && !isTableLocked && sanitizedTable && (
+                  <div className="flex items-center gap-2 pt-1 animate-in fade-in duration-150">
                     <input
-                      id="cart-table-number"
                       type="text"
                       value={currentTable}
                       onChange={(e) => {
@@ -243,91 +249,96 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
                         setInternalTableNumber(cleaned);
                         if (setTableNumber) setTableNumber(cleaned);
                       }}
-                      placeholder="Ej. 5"
-                      className="w-full bg-[#171717] border border-charcoalBorder rounded-lg px-3 py-2 text-sm text-warmCream placeholder:text-warmMuted/60 focus:outline-none focus:border-flameOrange transition-colors"
+                      placeholder="Nuevo número de mesa"
+                      className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-500"
+                      autoFocus
                     />
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingTable(false)}
+                      className="px-3 py-1.5 rounded-lg bg-amber-500 text-neutral-950 text-xs font-bold hover:bg-amber-400 transition-colors cursor-pointer"
+                    >
+                      Guardar
+                    </button>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-3.5 space-y-3">
-                <div className="flex items-center gap-2 pb-1 border-b border-neutral-800">
-                  <span className="text-base">🛍️</span>
-                  <span className="text-xs font-bold text-warmCream">
-                    Pedido Para Llevar
-                  </span>
+              /* Modalidad Para Llevar: Campos compactos */
+              <div className="bg-neutral-900/90 border border-neutral-800 rounded-xl p-3 space-y-2">
+                <div className="flex items-center gap-1.5 pb-1.5 border-b border-neutral-800 text-xs font-bold text-white">
+                  <span>🛍️</span>
+                  <span>Datos para Recoger</span>
                 </div>
-                <div>
-                  <label
-                    htmlFor="cart-customer-name"
-                    className="block text-xs font-bold text-warmCream mb-1 flex items-center gap-1.5"
-                  >
-                    <User className="w-3.5 h-3.5 text-flameOrange" />
-                    Nombre de quien recoge <span className="text-flameOrange">*</span>
-                  </label>
-                  <input
-                    id="cart-customer-name"
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Nombre completo"
-                    className="w-full bg-[#171717] border border-charcoalBorder rounded-lg px-3 py-2 text-sm text-warmCream placeholder:text-warmMuted/60 focus:outline-none focus:border-flameOrange transition-colors"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="cart-pickup-time"
-                    className="block text-xs font-bold text-warmCream mb-1 flex items-center gap-1.5"
-                  >
-                    <Clock className="w-3.5 h-3.5 text-flameOrange" />
-                    Hora estimada de entrega <span className="text-flameOrange">*</span>
-                  </label>
-                  <input
-                    id="cart-pickup-time"
-                    type="text"
-                    value={pickupTime}
-                    onChange={(e) => setPickupTime(e.target.value)}
-                    placeholder="Ej. 8:30 PM o En 20 min"
-                    className="w-full bg-[#171717] border border-charcoalBorder rounded-lg px-3 py-2 text-sm text-warmCream placeholder:text-warmMuted/60 focus:outline-none focus:border-flameOrange transition-colors"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label htmlFor="cart-customer-name" className="block text-[10px] font-semibold text-neutral-400 mb-0.5">
+                      Nombre <span className="text-amber-400">*</span>
+                    </label>
+                    <input
+                      id="cart-customer-name"
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Quién recoge"
+                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-500 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="cart-pickup-time" className="block text-[10px] font-semibold text-neutral-400 mb-0.5">
+                      Hora estimada <span className="text-amber-400">*</span>
+                    </label>
+                    <input
+                      id="cart-pickup-time"
+                      type="text"
+                      value={pickupTime}
+                      onChange={(e) => setPickupTime(e.target.value)}
+                      placeholder="Ej. En 25 min"
+                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-500 transition-colors"
+                    />
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Mensaje de error de validación */}
+          {/* Mensaje de error si la validación falla */}
           {errorMessage && (
-            <div className="mx-5 mb-2 p-2.5 rounded-lg bg-red-950/50 border border-red-800/60 text-xs text-red-200">
+            <div className="mx-4 sm:mx-5 mt-2 p-2.5 rounded-lg bg-red-950/60 border border-red-800/80 text-xs text-red-200 shrink-0">
               ⚠️ {errorMessage}
             </div>
           )}
 
-          {/* Lista de platillos agregados (Scrollable) */}
-          <div className="flex-1 overflow-y-auto px-5 py-2 space-y-3">
+          {/* 4. Lista de Platillos Limpia y Fluida (Scrollable Body) */}
+          <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-3 space-y-2.5 min-h-0">
             {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6 text-warmMuted">
-                <ShoppingBag className="w-12 h-12 text-warmMuted/40 mb-3" />
-                <p className="font-bold text-warmCream text-base">Aún no hay fuego en tu comanda</p>
-                <p className="text-xs text-warmMuted mt-1 max-w-xs">
-                  Explora nuestros cortes a la leña, ahumados y hamburguesas al carbón para comenzar tu orden.
+              /* Estado de Carrito Vacío */
+              <div className="h-full flex flex-col items-center justify-center text-center p-6 text-neutral-400 select-none">
+                <div className="w-16 h-16 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-3 text-neutral-500">
+                  <ShoppingBag className="w-8 h-8" />
+                </div>
+                <p className="font-bold text-white text-base">Tu orden aún no tiene platillos</p>
+                <p className="text-xs text-neutral-400 mt-1 max-w-xs leading-relaxed">
+                  Explora nuestros cortes a la leña, ahumados y especialidades al carbón para comenzar tu orden.
                 </p>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="mt-4 px-4 py-2 rounded-lg bg-charcoalCard border border-charcoalBorder text-xs font-bold text-warmCream hover:border-flameOrange transition-colors cursor-pointer"
+                  className="mt-5 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer"
                 >
-                  Explorar la Carta
+                  Explorar menú
                 </button>
               </div>
             ) : (
               cart.map((item, index) => {
                 const itemSubtotal = (item.price * item.quantity).toFixed(2);
+                const cleanItemName = item.name.replace(/\s*\([^)]*\)$/, '').trim();
                 return (
                   <div
                     key={`${item.id}-${index}`}
-                    className="p-3.5 rounded-xl bg-charcoalCard border border-charcoalBorder space-y-2.5 hover:border-charcoalBorder/90 transition-colors"
+                    className="p-3 rounded-xl bg-neutral-900/80 border border-neutral-800/80 space-y-2 hover:border-neutral-700/80 transition-colors"
                   >
-                    {/* Fila principal: Thumbnail, Nombre y subtotal */}
+                    {/* Fila principal: Thumbnail, Nombre y precio */}
                     <div className="flex items-start gap-3">
                       {item.image && (
                         <img
@@ -341,67 +352,61 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
                               e.target.style.display = 'none';
                             }
                           }}
-                          className="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-neutral-900 border border-charcoalBorder shadow-sm"
+                          className="w-14 h-14 rounded-lg object-cover bg-neutral-900 border border-neutral-800 shrink-0"
                         />
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-bold text-warmCream text-sm leading-snug truncate">
-                            {item.name}
+                          <h4 className="font-bold text-white text-sm leading-snug">
+                            {cleanItemName}
                           </h4>
-                          <span className="text-flameOrange font-extrabold text-sm whitespace-nowrap">
+                          <span className="text-amber-400 font-bold text-sm whitespace-nowrap">
                             ${itemSubtotal}
                           </span>
                         </div>
-                        <span className="text-[11px] text-warmMuted block mt-0.5">
+                        <span className="text-[11px] text-neutral-400 block mt-0.5">
                           ${Number(item.price).toFixed(2)} c/u
                         </span>
+
+                        {/* Guarnición, término y notas de cocina en texto gris legible */}
+                        {(item.selectedCookingPoint || item.selectedSide || item.notes) && (
+                          <div className="mt-1.5 pt-1.5 border-t border-neutral-800/60 text-xs text-neutral-400 space-y-0.5">
+                            {item.selectedCookingPoint && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-amber-400">🔥</span>
+                                <span>Término: <strong className="text-neutral-300 font-medium">{item.selectedCookingPoint}</strong></span>
+                              </div>
+                            )}
+                            {item.selectedSide && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-amber-400">🍟</span>
+                                <span>Guarnición: <strong className="text-neutral-300 font-medium">{item.selectedSide}</strong></span>
+                              </div>
+                            )}
+                            {item.notes && item.notes.trim() && (
+                              <div className="flex items-start gap-1">
+                                <span className="text-neutral-400">📝</span>
+                                <span className="italic text-neutral-300 break-words">{item.notes.trim()}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Desglose de personalización */}
-                    {(item.selectedCookingPoint || item.selectedSide || item.notes) && (
-                      <div className="p-2 rounded-lg bg-[#171717] border border-charcoalBorder/70 text-[11px] space-y-1 text-warmMuted">
-                        {item.selectedCookingPoint && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-flameOrange">🔥 Término:</span>
-                            <span className="text-warmCream font-medium truncate">
-                              {item.selectedCookingPoint}
-                            </span>
-                          </div>
-                        )}
-                        {item.selectedSide && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-badgeGold">🍟 Guarnición:</span>
-                            <span className="text-warmCream font-medium truncate">
-                              {item.selectedSide}
-                            </span>
-                          </div>
-                        )}
-                        {item.notes && (
-                          <div className="flex items-start gap-1.5">
-                            <span className="text-warmCream/80 font-medium">📝 Notas:</span>
-                            <span className="text-warmMuted italic break-words">
-                              {item.notes}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Controles de cantidad y eliminación */}
-                    <div className="pt-2 border-t border-charcoalBorder/50 flex items-center justify-between">
+                    {/* Controles de cantidad compactos y táctiles + botón eliminar */}
+                    <div className="pt-2 border-t border-neutral-800/60 flex items-center justify-between">
                       <button
                         type="button"
                         onClick={() => onRemoveItem && onRemoveItem(index)}
-                        className="text-xs text-warmMuted hover:text-red-400 flex items-center gap-1 transition-colors cursor-pointer p-1"
+                        className="text-xs text-neutral-400 hover:text-red-400 flex items-center gap-1 transition-colors cursor-pointer p-1"
                         aria-label="Eliminar platillo"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span className="text-[11px]">Eliminar</span>
                       </button>
 
-                      <div className="flex items-center gap-2 bg-[#171717] border border-charcoalBorder rounded-lg p-1">
+                      <div className="flex items-center gap-2 bg-neutral-950 border border-neutral-800 rounded-lg p-1">
                         <button
                           type="button"
                           onClick={() => {
@@ -411,18 +416,18 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
                               onRemoveItem && onRemoveItem(index);
                             }
                           }}
-                          className="w-7 h-7 rounded flex items-center justify-center text-warmCream hover:bg-charcoalCard transition-colors cursor-pointer"
+                          className="w-7 h-7 rounded flex items-center justify-center text-white hover:bg-neutral-800 transition-colors cursor-pointer"
                           aria-label="Disminuir cantidad"
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </button>
-                        <span className="w-6 text-center text-xs font-bold text-warmCream select-none">
+                        <span className="w-6 text-center text-xs font-bold text-white select-none">
                           {item.quantity}
                         </span>
                         <button
                           type="button"
                           onClick={() => onUpdateQuantity && onUpdateQuantity(index, item.quantity + 1)}
-                          className="w-7 h-7 rounded flex items-center justify-center text-warmCream hover:bg-charcoalCard transition-colors cursor-pointer"
+                          className="w-7 h-7 rounded flex items-center justify-center text-white hover:bg-neutral-800 transition-colors cursor-pointer"
                           aria-label="Aumentar cantidad"
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -435,162 +440,62 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
             )}
           </div>
 
-          {/* Resumen de cuenta & Botón de Enviar Pedido */}
+          {/* 1 & 2. Pie de Carrito Fijo (Sticky Bottom Footer) */}
           {cart.length > 0 && (
-            <div className="p-5 border-t border-charcoalBorder bg-charcoalCard/85 space-y-4 max-h-[70vh] overflow-y-auto">
-              <div className="space-y-1.5 text-xs text-warmMuted">
-                <div className="flex items-center justify-between">
-                  <span>Subtotal de consumo</span>
-                  <span className="text-warmCream font-medium">${subtotal.toFixed(2)} MXN</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Costo de envío / servicio</span>
-                  <span className="text-green-400 font-bold">$0.00 MXN</span>
-                </div>
-                <div className="pt-2 border-t border-charcoalBorder flex items-center justify-between text-base font-extrabold text-warmCream">
-                  <span>TOTAL A PAGAR</span>
-                  <span className="text-flameOrange font-black text-lg">
-                    ${total.toFixed(2)} MXN
-                  </span>
-                </div>
-
-                {/* 2. Políticas de Precios, Impuestos y Propina */}
-                <div className="pt-2.5 mt-2 border-t border-charcoalBorder/50 space-y-1 text-[11px] text-warmMuted/90">
-                  <div className="flex items-center gap-1.5 text-green-400/90 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" />
-                    <span>Todos nuestros precios incluyen IVA (precios netos en MXN).</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-badgeGold/90 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-badgeGold flex-shrink-0" />
-                    <span>La propina es 100% voluntaria conforme a las disposiciones oficiales.</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-warmCream/75 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-flameOrange flex-shrink-0" />
-                    <span>Sin cargos ocultos por servicio ni comisiones adicionales por pago con tarjeta.</span>
-                  </div>
-                </div>
+            <footer className="sticky bottom-0 bg-neutral-950 border-t border-neutral-800 p-4 sm:p-5 shadow-2xl shrink-0 z-20 space-y-3">
+              {/* Resumen de cobro con tipografía clara */}
+              <div className="flex items-baseline justify-between">
+                <span className="text-xs uppercase tracking-wider text-neutral-400 font-semibold">
+                  Total a pagar
+                </span>
+                <span className="text-xl sm:text-2xl font-black text-amber-400 tracking-tight">
+                  ${total.toFixed(2)} <span className="text-xs font-medium text-neutral-400">MXN</span>
+                </span>
               </div>
 
-              {/* 1. Transparencia de Métodos de Pago en el Carrito */}
-              <div className="border border-neutral-800 bg-neutral-900/60 rounded-xl p-3 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-warmCream flex items-center gap-1.5">
-                    <CreditCard className="w-3.5 h-3.5 text-flameOrange" />
-                    Formas de pago aceptadas
-                  </span>
-                  <span className="text-[10px] text-warmMuted font-medium bg-[#171717] px-2 py-0.5 rounded border border-charcoalBorder">
-                    En Mesa o Caja
-                  </span>
-                </div>
+              {/* Desglose sutil y en una sola línea discreta */}
+              <p className="text-[11px] text-neutral-400 text-center leading-tight">
+                Precios netos con IVA incluido • Propina voluntaria
+              </p>
 
-                {/* Badges de métodos */}
-                <div className="grid grid-cols-3 gap-1.5 text-center">
-                  <div className="bg-[#171717] border border-charcoalBorder/70 rounded-lg p-2 flex flex-col items-center">
-                    <span className="text-base mb-0.5">💳</span>
-                    <span className="font-bold text-warmCream text-[11px] leading-none">Tarjetas</span>
-                    <span className="text-[9px] text-warmMuted mt-1 leading-tight">Visa, MC, AMEX</span>
-                  </div>
-                  <div className="bg-[#171717] border border-charcoalBorder/70 rounded-lg p-2 flex flex-col items-center">
-                    <span className="text-base mb-0.5">💵</span>
-                    <span className="font-bold text-warmCream text-[11px] leading-none">Efectivo</span>
-                    <span className="text-[9px] text-warmMuted mt-1 leading-tight">Llevamos cambio</span>
-                  </div>
-                  <div className="bg-[#171717] border border-charcoalBorder/70 rounded-lg p-2 flex flex-col items-center">
-                    <span className="text-base mb-0.5">📲</span>
-                    <span className="font-bold text-warmCream text-[11px] leading-none">SPEI</span>
-                    <span className="text-[9px] text-warmMuted mt-1 leading-tight">Transferencia</span>
-                  </div>
-                </div>
+              {/* Botón principal de confirmación a todo lo ancho */}
+              <button
+                type="button"
+                onClick={handleSendOrder}
+                className="w-full h-12 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-neutral-950 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-[0.98] transition-all cursor-pointer text-sm sm:text-base tracking-wide"
+              >
+                {orderType === 'mesa' ? (
+                  <span>ENVIAR COMANDA A COCINA 🔥</span>
+                ) : (
+                  <span>CONFIRMAR Y PEDIR POR WHATSAPP 📲</span>
+                )}
+              </button>
 
-                {/* Nota de cobro en mesa */}
-                <p className="text-[10.5px] text-warmCream/70 leading-relaxed flex items-start gap-1.5 bg-[#171717]/60 p-2 rounded-lg border border-charcoalBorder/40">
-                  <span className="text-flameOrange text-xs flex-shrink-0">ℹ️</span>
-                  <span>
-                    El cobro se realiza directamente en tu mesa con terminal inalámbrica o en caja al retirarte.
-                  </span>
-                </p>
-              </div>
-
-              {/* Botón de Confirmación de Pedido */}
-              {orderType === 'mesa' ? (
-                <div>
+              {/* Formas de pago compactas en una sola línea minimalista + enlace a factura CFDI */}
+              <div className="pt-2 border-t border-neutral-800/70 flex flex-col sm:flex-row items-center justify-between gap-1 text-xs text-neutral-400 text-center sm:text-left">
+                <span className="flex items-center gap-1.5 justify-center text-[11px]">
+                  <span>💳 Tarjeta en mesa</span>
+                  <span>•</span>
+                  <span>💵 Efectivo</span>
+                  <span>•</span>
+                  <span>📲 Transferencia</span>
+                </span>
+                {onOpenInvoiceModal && (
                   <button
                     type="button"
-                    onClick={handleSendOrder}
-                    className="bg-flameOrange hover:bg-flameOrangeHover active:scale-[0.98] text-warmCream font-black py-4 rounded-xl text-center text-sm sm:text-base tracking-wide shadow-xl flex items-center justify-center gap-2 cursor-pointer w-full transition-all"
+                    onClick={() => {
+                      onClose();
+                      onOpenInvoiceModal();
+                    }}
+                    className="text-amber-400 hover:text-amber-300 underline underline-offset-2 transition-colors cursor-pointer text-[11px] font-medium"
                   >
-                    <span>CONFIRMAR PEDIDO A COCINA 🔥</span>
+                    ¿Requieres factura CFDI?
                   </button>
-                  <p className="text-[11px] text-center text-warmMuted mt-1.5 leading-tight">
-                    Tu orden se enviará a cocina de inmediato y se generará tu comanda digital en pantalla.
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <button
-                    type="button"
-                    onClick={handleSendOrder}
-                    className="bg-flameOrange hover:bg-flameOrangeHover active:scale-[0.98] text-warmCream font-black py-4 rounded-xl text-center text-sm sm:text-base tracking-wide shadow-xl flex items-center justify-center gap-2 cursor-pointer w-full transition-all"
-                  >
-                    <span>ENVIAR PEDIDO A COCINA POR WHATSAPP 📲</span>
-                  </button>
-                  <p className="text-[11px] text-center text-warmMuted mt-1.5 leading-tight">
-                    Al enviar tu pedido se abrirá WhatsApp lista para despachar tu pedido para recoger.
-                  </p>
-                </div>
-              )}
-
-              {/* 3. Módulo de Facturación Electrónica (CFDI) */}
-              <div className="border border-charcoalBorder bg-[#141414] rounded-xl overflow-hidden text-xs">
-                <button
-                  type="button"
-                  onClick={() => setIsInvoiceAccordionOpen(!isInvoiceAccordionOpen)}
-                  className="w-full px-3 py-2.5 flex items-center justify-between text-left hover:bg-charcoalCard transition-colors cursor-pointer select-none"
-                >
-                  <span className="font-bold text-warmCream flex items-center gap-2 text-xs">
-                    <FileText className="w-3.5 h-3.5 text-badgeGold" />
-                    ¿Requieres Factura Electrónica (CFDI)?
-                  </span>
-                  <ChevronDown
-                    className={`w-4 h-4 text-warmMuted transition-transform duration-200 ${
-                      isInvoiceAccordionOpen ? 'rotate-180 text-flameOrange' : ''
-                    }`}
-                  />
-                </button>
-
-                {isInvoiceAccordionOpen && (
-                  <div className="p-3 border-t border-charcoalBorder/60 bg-[#101010] text-[11px] text-warmMuted space-y-2 animate-in fade-in duration-150">
-                    <p className="leading-relaxed">
-                      Puedes solicitar tu factura al momento de pagar indicando tu <strong className="text-warmCream font-bold">RFC</strong> al mesero en sala, o enviando foto de tu ticket con tus datos fiscales a nuestro correo o WhatsApp:
-                    </p>
-                    <div className="bg-[#171717] p-2 rounded-lg border border-charcoalBorder/80 space-y-1">
-                      <div className="flex items-center justify-between text-warmCream">
-                        <span className="text-warmMuted">Correo de Facturación:</span>
-                        <span className="font-mono text-badgeGold font-semibold text-[10.5px]">{RESTAURANT_INFO.billingEmail}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-warmCream">
-                        <span className="text-warmMuted">WhatsApp Facturación:</span>
-                        <span className="font-mono text-green-400 font-semibold">{RESTAURANT_INFO.phoneDisplay}</span>
-                      </div>
-                    </div>
-                    {onOpenInvoiceModal && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onClose();
-                          onOpenInvoiceModal();
-                        }}
-                        className="w-full py-1.5 px-2.5 rounded-lg bg-charcoalCard hover:bg-[#252525] border border-charcoalBorder text-warmCream text-center font-bold text-[11px] transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                      >
-                        <FileText className="w-3 h-3 text-badgeGold" />
-                        <span>Ver requisitos completos y solicitar CFDI</span>
-                      </button>
-                    )}
-                  </div>
                 )}
               </div>
-            </div>
+            </footer>
           )}
+
         </aside>
       </div>
     </div>

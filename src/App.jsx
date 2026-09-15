@@ -236,6 +236,7 @@ export default function App() {
     const nameNorm = normalizeString(dish.name);
     const descNorm = normalizeString(dish.description);
     const badgeNorm = normalizeString(dish.badge || '');
+    const portionNorm = normalizeString(dish.portion || '');
     const tagsNorm = (dish.tags || []).map(normalizeString);
     const categoryObj = CATEGORIES.find((c) => c.id === dish.categoryId);
     const categoryNorm = categoryObj ? normalizeString(categoryObj.name) : '';
@@ -243,6 +244,7 @@ export default function App() {
     return (
       nameNorm.includes(normalizedQuery) ||
       descNorm.includes(normalizedQuery) ||
+      portionNorm.includes(normalizedQuery) ||
       badgeNorm.includes(normalizedQuery) ||
       categoryNorm.includes(normalizedQuery) ||
       tagsNorm.some((tag) => tag.includes(normalizedQuery))
@@ -414,21 +416,10 @@ export default function App() {
           onOpenActiveTicket={() => setIsSuccessModalOpen(true)}
         />
 
-        {/* Hero visual compacto */}
-        <Hero />
+        {/* Hero visual adaptativo y ultra-compacto */}
+        <Hero orderMode={orderType} />
 
-        {/* Barra de búsqueda en tiempo real y chips deslizables de filtros rápidos */}
-        <MenuSearchAndFilters
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          selectedFilters={selectedFilters}
-          onToggleFilter={handleToggleFilter}
-          onClearAll={handleClearAllFilters}
-          totalResults={filteredDishes.length}
-          isFiltering={isFiltering}
-        />
-
-        {/* Barra pegajosa con filtro de categorías deslizables */}
+        {/* Barra pegajosa con filtro de categorías deslizables (Acceso Inmediato Above the Fold) */}
         <CategoryFilter
           categories={CATEGORIES}
           activeCategory={activeCategory}
@@ -441,12 +432,23 @@ export default function App() {
           }}
         />
 
-        {/* Cuadrícula del catálogo o estado vacío con compensación ergonómica fija inferior */}
+        {/* Barra de búsqueda en tiempo real y chips deslizables de filtros rápidos */}
+        <MenuSearchAndFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedFilters={selectedFilters}
+          onToggleFilter={handleToggleFilter}
+          onClearAll={handleClearAllFilters}
+          totalResults={filteredDishes.length}
+          isFiltering={isFiltering}
+        />
+
+        {/* Cuadrícula del catálogo con compensación ergonómica y acceso inmediato a platillos */}
         <main 
-          className="max-w-7xl mx-auto px-4 py-6 sm:py-8 pb-28 sm:pb-32"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 7.5rem)' }}
+          className="max-w-7xl mx-auto px-4 pt-3 sm:pt-4 pb-32 sm:pb-36"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8.5rem)' }}
         >
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="mb-3.5 sm:mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl sm:text-2xl font-black text-warmCream tracking-tight">

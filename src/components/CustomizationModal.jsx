@@ -106,7 +106,7 @@ export default function CustomizationModal({
             {/* Badge flotante si existe */}
             {dish.badge && (
               <div className="absolute top-4 left-4 z-10">
-                <span className="bg-charcoal/90 backdrop-blur-md text-flameOrange border border-flameOrange/40 text-xs font-bold px-3 py-1 rounded-full shadow-lg inline-block">
+                <span className="bg-neutral-900/85 backdrop-blur-md text-amber-400 border border-neutral-700/60 text-xs font-semibold px-2.5 py-1 rounded-md shadow-lg inline-flex items-center gap-1">
                   {dish.badge}
                 </span>
               </div>
@@ -134,21 +134,60 @@ export default function CustomizationModal({
           </button>
         )}
 
-        {/* Cuerpo del modal con descripción y opciones */}
+        {/* Cuerpo del modal con descripción, porción, tags y opciones */}
         <div className="p-5 sm:p-6">
-          {/* Título y Precio */}
-          <div className="mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-3">
-              <h2 id="modal-dish-title" className="text-xl sm:text-2xl font-black text-warmCream leading-tight">
-                {dish.name}
-              </h2>
-              <span className="text-flameOrange font-black text-xl whitespace-nowrap">
+          {/* Título, Porción y Precio */}
+          <div className="mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1.5 sm:gap-3">
+              <div className="flex flex-wrap items-baseline gap-2">
+                <h2 id="modal-dish-title" className="text-xl sm:text-2xl font-black text-warmCream leading-tight">
+                  {dish.name.replace(/\s*\([^)]*\)$/, '').trim()}
+                </h2>
+                {(dish.portion || dish.name.match(/\(([^)]+)\)$/)?.[1]) && (
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-neutral-800 border border-neutral-700/70 text-neutral-300">
+                    {dish.portion || dish.name.match(/\(([^)]+)\)$/)?.[1]}
+                  </span>
+                )}
+              </div>
+              <span className="text-amber-400 font-black text-xl sm:text-2xl whitespace-nowrap">
                 ${Number(dish.price || 0).toFixed(2)} MXN
               </span>
             </div>
-            <p className="text-warmCream/80 text-xs sm:text-sm mt-2 leading-relaxed">
+            
+            <p className="text-neutral-300 text-xs sm:text-sm mt-2.5 leading-relaxed">
               {dish.description}
             </p>
+
+            {/* Etiquetas gastronómicas y dietéticas completas reservadas para el modal */}
+            {dish.tags && dish.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-3.5 pt-3 border-t border-neutral-800/60">
+                {dish.tags.map((tag) => {
+                  const tagMap = {
+                    'sin-gluten': { label: 'Sin Gluten', icon: '🌾' },
+                    'picante': { label: 'Picante', icon: '🌶️' },
+                    'especialidad': { label: 'Especialidad', icon: '⭐' },
+                    'para-compartir': { label: 'Para Compartir', icon: '👥' },
+                    'vegetariano': { label: 'Vegetariano', icon: '🥗' },
+                    'ligero': { label: 'Ligero', icon: '🥗' },
+                    'ahumado': { label: 'Ahumado Low & Slow', icon: '🪵' },
+                    'top-ventas': { label: 'Top Ventas', icon: '🔥' },
+                    'gourmet': { label: 'Gourmet', icon: '✨' },
+                    'artesanal': { label: 'Artesanal', icon: '🍻' },
+                    'bebida': { label: 'Bebida', icon: '🍺' }
+                  };
+                  const info = tagMap[tag] || { label: tag, icon: '🏷️' };
+                  return (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 text-[11px] sm:text-xs px-2.5 py-1 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 font-medium"
+                    >
+                      <span>{info.icon}</span>
+                      <span>{info.label}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">

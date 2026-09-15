@@ -41,7 +41,7 @@ export default function MenuSearchAndFilters({
   return (
     <section 
       aria-label="Búsqueda y filtros rápidos" 
-      className="max-w-7xl mx-auto px-4 pt-4 pb-2"
+      className="max-w-7xl mx-auto px-4 pt-2.5 pb-1 sm:pt-3.5 sm:pb-2"
     >
       {/* 1. Barra de Búsqueda en Tiempo Real */}
       <div className="relative flex items-center">
@@ -55,7 +55,7 @@ export default function MenuSearchAndFilters({
           value={localInput}
           onChange={(e) => setLocalInput(e.target.value)}
           placeholder="Buscar platillo, corte, ingrediente o bebida..."
-          className="w-full h-11 bg-charcoalCard border border-charcoalBorder hover:border-charcoalBorder/90 focus:border-flameOrange focus:ring-1 focus:ring-flameOrange/40 rounded-xl pl-10 pr-10 text-base sm:text-sm text-warmCream placeholder:text-warmMuted/50 transition-all outline-none"
+          className="w-full h-10 sm:h-11 bg-neutral-900 border border-neutral-800 hover:border-neutral-700 focus:border-flameOrange focus:ring-1 focus:ring-flameOrange/40 rounded-xl pl-10 pr-10 text-sm text-warmCream placeholder:text-warmMuted/50 transition-all outline-none"
         />
 
         {localInput && (
@@ -71,7 +71,7 @@ export default function MenuSearchAndFilters({
       </div>
 
       {/* 2. Chips Deslizables de Filtros Rápidos (Dietary & Preferences) */}
-      <div className="mt-3 flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="mt-2 flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 -mx-4 px-4 sm:mx-0 sm:px-0">
         <div className="flex items-center gap-1.5 text-xs text-warmMuted flex-shrink-0 mr-1 select-none">
           <SlidersHorizontal className="w-3.5 h-3.5 text-flameOrange" />
           <span className="hidden xs:inline font-semibold">Filtros:</span>
