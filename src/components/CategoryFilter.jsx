@@ -19,7 +19,7 @@ export default function CategoryFilter({
   return (
     <nav 
       aria-label="Filtro de categorías de menú"
-      className="overflow-x-auto no-scrollbar py-3 sticky top-[88px] bg-charcoal/95 backdrop-blur-md z-30 border-b border-charcoalBorder"
+      className="overflow-x-auto no-scrollbar py-3 sticky top-[118px] md:top-[88px] bg-charcoal/95 backdrop-blur-md z-30 border-b border-charcoalBorder"
     >
       <div className="max-w-7xl mx-auto px-4 flex items-center gap-2.5 min-w-max">
         {categories.map((category) => {
