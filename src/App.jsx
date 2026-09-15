@@ -107,6 +107,10 @@ export default function App() {
     return () => clearInterval(interval);
   }, [waiterCooldown]);
 
+  // Totales de la orden activa en carrito
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
   // 4. Ajuste dinámico del espaciado inferior del catálogo según la modalidad y el estado del carrito
   const isMesaMode = orderType === 'mesa';
   const hasBottomCart = cartCount > 0 || Boolean(activeConfirmedOrder);
@@ -189,10 +193,6 @@ export default function App() {
       tagsNorm.some((tag) => tag.includes(normalizedQuery))
     );
   });
-
-  // Totales de la orden activa en carrito
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   // Abrir modal de personalización
   const handleOpenCustomize = (dish) => {

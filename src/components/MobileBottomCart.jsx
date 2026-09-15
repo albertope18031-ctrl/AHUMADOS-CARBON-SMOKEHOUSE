@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Receipt, ArrowRight, ChevronUp, Clock } from 'lucide-react';
+import { cleanTableNumber } from '../utils/textUtils';
 
 export default function MobileBottomCart({
   cart = [],
@@ -59,7 +60,7 @@ export default function MobileBottomCart({
               <div className="absolute bottom-full left-0 mb-2.5 w-52 bg-neutral-950/95 backdrop-blur-xl border border-neutral-800 rounded-2xl shadow-2xl p-2 space-y-1.5 animate-in slide-in-from-bottom-2 duration-150 z-50">
                 <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-warmMuted/80 border-b border-neutral-800/80 mb-1 flex items-center justify-between">
                   <span>Atención en Sala</span>
-                  {tableNumber && <span className="text-flameOrange">Mesa #{tableNumber}</span>}
+                  {cleanTableNumber(tableNumber) && <span className="text-flameOrange">Mesa {cleanTableNumber(tableNumber)}</span>}
                 </div>
 
                 {/* Opción 1: Llamar Mesero */}
