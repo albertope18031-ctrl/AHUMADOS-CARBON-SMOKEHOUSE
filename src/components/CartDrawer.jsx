@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Flame, Trash2, Plus, Minus, Send, ShoppingBag, Utensils, Clock, User, Hash, Lock, CreditCard, FileText, ChevronDown } from 'lucide-react';
 import { RESTAURANT_INFO } from '../data/menuData';
+import { cleanTableNumber } from '../utils/textUtils';
 
 export default function CartDrawer({
   isOpen,
@@ -194,7 +195,7 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
                 }`}
               >
                 <span>🍽️</span>
-                <span>En Mesa {currentTable ? `(#${currentTable})` : ''}</span>
+                <span>En Mesa {cleanTableNumber(currentTable) ? `(Mesa ${cleanTableNumber(currentTable)})` : ''}</span>
               </button>
               <button
                 type="button"
@@ -237,11 +238,12 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
                   readOnly={isTableLocked}
                   onChange={(e) => {
                     if (!isTableLocked) {
-                      setInternalTableNumber(e.target.value);
-                      if (setTableNumber) setTableNumber(e.target.value);
+                      const cleaned = cleanTableNumber(e.target.value);
+                      setInternalTableNumber(cleaned);
+                      if (setTableNumber) setTableNumber(cleaned);
                     }
                   }}
-                  placeholder="Ej. Mesa 5"
+                  placeholder="Ej. 5"
                   className={`w-full bg-[#171717] border border-charcoalBorder rounded-lg px-3 py-2 text-sm text-warmCream placeholder:text-warmMuted/60 transition-colors ${
                     isTableLocked ? 'cursor-not-allowed text-badgeGold font-bold bg-[#131313]' : 'focus:outline-none focus:border-flameOrange'
                   }`}

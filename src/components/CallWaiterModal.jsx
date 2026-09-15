@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, X, Check, MessageSquare, Flame } from 'lucide-react';
+import { Bell, Clock, X, MessageSquare, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { RESTAURANT_INFO } from '../data/menuData';
+import { cleanTableNumber } from '../utils/textUtils';
 
 const REASON_OPTIONS = [
   { id: 'menu_help', label: 'Ayuda / Consulta del menú', icon: '📖' },
@@ -89,7 +90,7 @@ Comensal esperando asistencia en sala.`;
               Llamar Mesero
             </h3>
             <span className="text-xs text-badgeGold font-bold tracking-wide">
-              {tableNumber ? `📍 Asistencia para Mesa #${tableNumber}` : '📍 Asistencia en sala'}
+              {cleanTableNumber(tableNumber) ? `📍 Asistencia para Mesa ${cleanTableNumber(tableNumber)}` : '📍 Asistencia en sala'}
             </span>
           </div>
         </div>
@@ -104,7 +105,7 @@ Comensal esperando asistencia en sala.`;
               Solicitud de mesero en curso
             </h4>
             <p className="text-xs text-warmMuted leading-relaxed">
-              Un miembro de nuestro equipo está acudiendo a la <strong className="text-warmCream">Mesa #{tableNumber}</strong>. Podrás solicitar asistencia nuevamente en:
+              Un miembro de nuestro equipo está acudiendo a la <strong className="text-warmCream">Mesa {cleanTableNumber(tableNumber)}</strong>. Podrás solicitar asistencia nuevamente en:
             </p>
             <div className="text-xl font-mono font-black text-flameOrange">
               ⏳ {cooldownSeconds} segundos

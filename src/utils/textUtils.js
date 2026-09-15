@@ -11,3 +11,12 @@ export function normalizeString(str) {
     .toLowerCase()
     .trim();
 }
+
+/**
+ * Sanitiza la entrada del número de mesa eliminando prefijos redundantes
+ * como "Mesa", "Table", "#" o espacios extras (ej. "Mesa 4" -> "4", "#12" -> "12").
+ */
+export const cleanTableNumber = (value) => {
+  if (!value) return '';
+  return value.toString().replace(/^(mesa|table|#|\s)+/gi, '').trim();
+};

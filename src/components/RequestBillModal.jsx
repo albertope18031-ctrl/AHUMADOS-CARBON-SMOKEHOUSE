@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Receipt, CreditCard, Banknote, FileText, Check, X, MessageSquare, Sparkles } from 'lucide-react';
 import { RESTAURANT_INFO } from '../data/menuData';
+import { cleanTableNumber } from '../utils/textUtils';
 
 export default function RequestBillModal({
   isOpen,
@@ -107,7 +108,7 @@ Por favor llevar la cuenta / terminal a la mesa.`;
               Pedir la Cuenta
             </h3>
             <span className="text-xs text-badgeGold font-bold tracking-wide">
-              {tableNumber ? `📍 Mesa #${tableNumber}` : '📍 Servicio a mesa'}
+              {cleanTableNumber(tableNumber) ? `📍 Mesa ${cleanTableNumber(tableNumber)}` : '📍 Servicio a mesa'}
             </span>
           </div>
         </div>

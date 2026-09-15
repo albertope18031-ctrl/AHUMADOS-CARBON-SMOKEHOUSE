@@ -17,7 +17,7 @@ import InvoiceModal from './components/InvoiceModal';
 import { Receipt, Flame, RotateCcw } from 'lucide-react';
 import { CATEGORIES, DISHES } from './data/menuData';
 import { sendServiceNotification } from './utils/serviceNotifications';
-import { normalizeString } from './utils/textUtils';
+import { normalizeString, cleanTableNumber } from './utils/textUtils';
 
 export default function App() {
   // 1. Detección automática de mesa vía URL (?mesa=4 o ?table=4) o localStorage
@@ -26,13 +26,15 @@ export default function App() {
       const params = new URLSearchParams(window.location.search);
       const paramTable = params.get('mesa') || params.get('table');
       if (paramTable) {
+        const cleaned = cleanTableNumber(paramTable);
         try {
-          localStorage.setItem('smokehouse_table', paramTable);
+          localStorage.setItem('smokehouse_table', cleaned);
         } catch (e) {}
-        return paramTable;
+        return cleaned;
       }
       try {
-        return localStorage.getItem('smokehouse_table') || '';
+        const saved = localStorage.getItem('smokehouse_table');
+        return saved ? cleanTableNumber(saved) : '';
       } catch (e) {
         return '';
       }
@@ -79,6 +81,23 @@ export default function App() {
   const [waiterCooldown, setWaiterCooldown] = useState(0);
   const [activeToast, setActiveToast] = useState(null);
 
+  // 3. Manejador de cambio de modalidad con cierre automático de modales de salón
+  const handleOrderTypeChange = (newMode) => {
+    setOrderType(newMode);
+    if (newMode === 'llevar') {
+      setIsCallWaiterOpen(false);
+      setIsRequestBillOpen(false);
+    }
+  };
+
+  // Cierre preventivo de modales de salón al cambiar a modalidad 'llevar'
+  useEffect(() => {
+    if (orderType === 'llevar') {
+      setIsCallWaiterOpen(false);
+      setIsRequestBillOpen(false);
+    }
+  }, [orderType]);
+
   // Temporizador de bloqueo (cooldown de 75 segundos)
   useEffect(() => {
     if (waiterCooldown <= 0) return;
@@ -87,6 +106,20 @@ export default function App() {
     }, 1000);
     return () => clearInterval(interval);
   }, [waiterCooldown]);
+
+  // 4. Ajuste dinámico del espaciado inferior del catálogo según la modalidad y el estado del carrito
+  const isMesaMode = orderType === 'mesa';
+  const hasBottomCart = cartCount > 0 || Boolean(activeConfirmedOrder);
+
+  const mainPaddingClass = isMesaMode
+    ? "pb-32 sm:pb-36 md:pb-16"
+    : (hasBottomCart ? "pb-20 sm:pb-24 md:pb-16" : "pb-12 sm:pb-16 md:pb-12");
+
+  const mainPaddingStyle = isMesaMode
+    ? { paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8.5rem)' }
+    : (hasBottomCart
+        ? { paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.5rem)' }
+        : { paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 2rem)' });
 
   // Estados de búsqueda en tiempo real y chips de filtros rápidos
   const [searchQuery, setSearchQuery] = useState('');
@@ -295,11 +328,12 @@ export default function App() {
         {/* Encabezado fijo con detección de mesa y acceso a comanda activa */}
         <Header
           orderMode={orderType}
-          setOrderMode={setOrderType}
+          setOrderMode={handleOrderTypeChange}
           cartCount={cartCount}
           cartTotal={cartTotal}
           onOpenCart={() => setIsCartOpen(true)}
           tableNumber={tableNumber}
+          setTableNumber={setTableNumber}
           isTableLocked={isTableLocked}
           activeOrder={activeConfirmedOrder}
           onOpenActiveTicket={() => setIsSuccessModalOpen(true)}
@@ -332,17 +366,20 @@ export default function App() {
           }}
         />
 
-        {/* Cuadrícula del catálogo o estado vacío con espacio para botoneras móviles */}
-        <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8 pb-36 md:pb-16">
+        {/* Cuadrícula del catálogo o estado vacío con compensación ergonómica dinámica según modalidad */}
+        <main 
+          className={`max-w-7xl mx-auto px-4 py-6 sm:py-8 transition-all duration-300 ease-in-out ${mainPaddingClass}`}
+          style={mainPaddingStyle}
+        >
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl sm:text-2xl font-black text-warmCream tracking-tight">
                   {isFiltering ? 'Platillos Encontrados' : (CATEGORIES.find((c) => c.id === activeCategory)?.name || 'Platillos')}
                 </h2>
-                {tableNumber && (
-                  <span className="px-2.5 py-0.5 rounded-full bg-flameOrange/15 border border-flameOrange/30 text-flameOrange text-xs font-bold">
-                    📍 Atendiendo Mesa #{tableNumber}
+                {orderType === 'mesa' && cleanTableNumber(tableNumber) && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-flameOrange/15 border border-flameOrange/30 text-flameOrange text-xs font-bold animate-in fade-in">
+                    📍 Mesa {cleanTableNumber(tableNumber)}
                   </span>
                 )}
               </div>
@@ -435,7 +472,7 @@ export default function App() {
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
         orderType={orderType}
-        setOrderType={setOrderType}
+        setOrderType={handleOrderTypeChange}
         tableNumber={tableNumber}
         setTableNumber={setTableNumber}
         isTableLocked={isTableLocked}
@@ -443,17 +480,19 @@ export default function App() {
         onOpenInvoiceModal={() => setIsInvoiceModalOpen(true)}
       />
 
-      {/* Botonera Flotante de Asistencia en Sala (Llamar Mesero / Pedir Cuenta) */}
-      <TableServiceBar
-        isVisible={orderType === 'mesa' || Boolean(tableNumber)}
-        tableNumber={tableNumber}
-        onCallWaiter={() => setIsCallWaiterOpen(true)}
-        onRequestBill={() => setIsRequestBillOpen(true)}
-        hasBottomCart={cartCount > 0 || Boolean(activeConfirmedOrder)}
-        cooldownSeconds={waiterCooldown}
-      />
+      {/* Botonera Flotante de Asistencia en Sala (Llamar Mesero / Pedir Cuenta): ÚNICAMENTE EN MODALIDAD EN MESA */}
+      {orderType === 'mesa' && (
+        <TableServiceBar
+          isVisible={true}
+          tableNumber={tableNumber}
+          onCallWaiter={() => setIsCallWaiterOpen(true)}
+          onRequestBill={() => setIsRequestBillOpen(true)}
+          hasBottomCart={hasBottomCart}
+          cooldownSeconds={waiterCooldown}
+        />
+      )}
 
-      {/* Barra flotante inferior fija en móvil (para ver orden actual o comanda activa) */}
+      {/* Barra flotante inferior fija en móvil (dock modular con carrito y atención en mesa) */}
       <MobileBottomCart
         cart={cart}
         totalItems={cartCount}
@@ -461,6 +500,11 @@ export default function App() {
         onOpenCart={() => setIsCartOpen(true)}
         activeOrder={activeConfirmedOrder}
         onOpenActiveTicket={() => setIsSuccessModalOpen(true)}
+        isTableServiceVisible={orderType === 'mesa'}
+        tableNumber={tableNumber}
+        onCallWaiter={() => setIsCallWaiterOpen(true)}
+        onRequestBill={() => setIsRequestBillOpen(true)}
+        cooldownSeconds={waiterCooldown}
       />
 
       {/* Modal interactivo para Llamar al Mesero con selección de motivo */}
