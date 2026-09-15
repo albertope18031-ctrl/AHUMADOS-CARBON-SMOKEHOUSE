@@ -279,19 +279,36 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
                     key={`${item.id}-${index}`}
                     className="p-3.5 rounded-xl bg-charcoalCard border border-charcoalBorder space-y-2.5 hover:border-charcoalBorder/90 transition-colors"
                   >
-                    {/* Fila principal: Nombre y subtotal */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h4 className="font-bold text-warmCream text-sm leading-snug">
-                          {item.name}
-                        </h4>
+                    {/* Fila principal: Thumbnail, Nombre y subtotal */}
+                    <div className="flex items-start gap-3">
+                      {item.image && (
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          onError={(e) => {
+                            if (!e.target.dataset.triedJpg && item.image?.endsWith('.png')) {
+                              e.target.dataset.triedJpg = 'true';
+                              e.target.src = item.image + '.jpg';
+                            } else {
+                              e.target.style.display = 'none';
+                            }
+                          }}
+                          className="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-neutral-900 border border-charcoalBorder shadow-sm"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-bold text-warmCream text-sm leading-snug truncate">
+                            {item.name}
+                          </h4>
+                          <span className="text-flameOrange font-extrabold text-sm whitespace-nowrap">
+                            ${itemSubtotal}
+                          </span>
+                        </div>
                         <span className="text-[11px] text-warmMuted block mt-0.5">
                           ${Number(item.price).toFixed(2)} c/u
                         </span>
                       </div>
-                      <span className="text-flameOrange font-extrabold text-sm whitespace-nowrap">
-                        ${itemSubtotal}
-                      </span>
                     </div>
 
                     {/* Desglose de personalización */}
