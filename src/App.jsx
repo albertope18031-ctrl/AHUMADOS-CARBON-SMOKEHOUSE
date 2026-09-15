@@ -18,6 +18,48 @@ import { CATEGORIES, DISHES } from './data/menuData';
 import { sendServiceNotification } from './utils/serviceNotifications';
 import { normalizeString, cleanTableNumber } from './utils/textUtils';
 
+// Tiempo de vida de la comanda activa en mesa (TTL): 2 horas
+const ORDER_TTL_HOURS = 2;
+
+// Validador de persistencia con TTL (2 Horas) y detección de cambio de mesa
+const getValidActiveOrder = (currentUrlTable = null) => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('smokehouse_active_order');
+    if (!raw) return null;
+    const savedOrder = JSON.parse(raw);
+
+    // 1. Expiración automática: descartar si no tiene timestamp o si han pasado más de 2 horas
+    if (!savedOrder.createdAt) {
+      localStorage.removeItem('smokehouse_active_order');
+      return null;
+    }
+
+    const hoursElapsed = (Date.now() - savedOrder.createdAt) / (1000 * 60 * 60);
+    if (hoursElapsed > ORDER_TTL_HOURS) {
+      localStorage.removeItem('smokehouse_active_order');
+      return null;
+    }
+
+    // 2. Detección de nueva mesa vía URL: si difiere de la mesa guardada, descartar comanda anterior
+    if (currentUrlTable) {
+      const cleanUrl = cleanTableNumber(currentUrlTable);
+      const cleanOrderTable = cleanTableNumber(savedOrder.tableNumber);
+      if (cleanUrl && cleanOrderTable && cleanUrl !== cleanOrderTable) {
+        localStorage.removeItem('smokehouse_active_order');
+        return null;
+      }
+    }
+
+    return savedOrder;
+  } catch (e) {
+    try {
+      localStorage.removeItem('smokehouse_active_order');
+    } catch (_) {}
+    return null;
+  }
+};
+
 export default function App() {
   // 1. Detección automática de mesa vía URL (?mesa=4 o ?table=4) o localStorage
   const [tableNumber, setTableNumber] = useState(() => {
@@ -74,6 +116,12 @@ export default function App() {
           localStorage.setItem('smokehouse_table', cleaned);
         } catch (e) {}
       }
+
+      // Validar si la comanda almacenada venció por TTL o pertenece a otra mesa
+      const validOrder = getValidActiveOrder(paramTable);
+      if (!validOrder) {
+        setActiveConfirmedOrder(null);
+      }
     }
   }, []);
 
@@ -83,15 +131,12 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedDishForCustomization, setSelectedDishForCustomization] = useState(null);
 
-  // 2. Persistencia de comanda activa confirmada en mesa (ticket in-app)
+  // 2. Persistencia de comanda activa confirmada en mesa con validación de ciclo de vida
   const [activeConfirmedOrder, setActiveConfirmedOrder] = useState(() => {
     if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('smokehouse_active_order');
-        return saved ? JSON.parse(saved) : null;
-      } catch (e) {
-        return null;
-      }
+      const params = new URLSearchParams(window.location.search);
+      const paramTable = params.get('mesa') || params.get('table');
+      return getValidActiveOrder(paramTable);
     }
     return null;
   });
@@ -294,11 +339,15 @@ export default function App() {
 
   // Confirmación In-App de la comanda en mesa (sin salir a WhatsApp)
   const handleConfirmInAppOrder = (orderData) => {
-    setActiveConfirmedOrder(orderData);
+    const finalOrder = {
+      ...orderData,
+      createdAt: orderData.createdAt || Date.now()
+    };
+    setActiveConfirmedOrder(finalOrder);
     try {
-      localStorage.setItem('smokehouse_active_order', JSON.stringify(orderData));
-      if (orderData.tableNumber) {
-        localStorage.setItem('smokehouse_table', orderData.tableNumber);
+      localStorage.setItem('smokehouse_active_order', JSON.stringify(finalOrder));
+      if (finalOrder.tableNumber) {
+        localStorage.setItem('smokehouse_table', finalOrder.tableNumber);
       }
     } catch (e) {
       console.error(e);
@@ -307,6 +356,22 @@ export default function App() {
     setCart([]);
     setIsCartOpen(false);
     setIsSuccessModalOpen(true);
+  };
+
+  // 3. Acción "Cerrar Cuenta / Nueva Visita" y "Limpiar comanda de prueba"
+  const handleResetAccount = () => {
+    setActiveConfirmedOrder(null);
+    setCart([]);
+    try {
+      localStorage.removeItem('smokehouse_active_order');
+    } catch (e) {
+      console.error(e);
+    }
+    setActiveToast({
+      type: 'bill',
+      title: 'Cuenta Restablecida 🔄',
+      message: 'Comanda finalizada. La cuenta ha quedado en $0.00 MXN para una nueva orden.'
+    });
   };
 
   // Despacho de llamada a mesero con notificación inmediata y cooldown
@@ -520,6 +585,7 @@ export default function App() {
         cartTotal={cartTotal}
         onClose={() => setIsRequestBillOpen(false)}
         onConfirmBill={handleConfirmBill}
+        onResetAccount={handleResetAccount}
       />
 
       {/* Modal de Solicitud de Factura Electrónica (CFDI 4.0) */}

@@ -86,7 +86,8 @@ export default function CartDrawer({
         total,
         timestamp: formattedNowTime,
         date: now.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }),
-        estimatedTime: '15 - 25 min'
+        estimatedTime: '15 - 25 min',
+        createdAt: Date.now()
       };
 
       if (onConfirmInAppOrder) {

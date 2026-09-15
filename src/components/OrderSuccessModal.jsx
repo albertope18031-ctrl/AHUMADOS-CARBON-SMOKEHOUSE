@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle2, Flame, Clock, MessageSquare, ArrowLeft, Utensils, Hash } from 'lucide-react';
 import { RESTAURANT_INFO } from '../data/menuData';
+import { cleanTableNumber } from '../utils/textUtils';
 
 export default function OrderSuccessModal({
   isOpen,
@@ -28,7 +29,7 @@ export default function OrderSuccessModal({
     const message = `🔥 *TICKET DE COMANDA - AHUMADOS & CARBÓN SMOKEHOUSE* 🔥
 Folio: ${order.folio}
 --------------------------------------------------
-📍 *Mesa:* #${order.tableNumber}
+📍 *Mesa:* Mesa ${cleanTableNumber(order.tableNumber)}
 ⏰ *Hora:* ${order.timestamp}
 ⏳ *Tiempo estimado:* ${order.estimatedTime || '15 - 25 min'}
 
@@ -86,7 +87,7 @@ Comanda registrada en mesa con éxito. Guarde este mensaje como comprobante pers
               Ubicación
             </span>
             <span className="text-lg sm:text-xl font-black text-warmCream flex items-center justify-center gap-1">
-              📍 Mesa #{order.tableNumber}
+              📍 Mesa {cleanTableNumber(order.tableNumber)}
             </span>
           </div>
         </div>
@@ -183,7 +184,7 @@ Comanda registrada en mesa con éxito. Guarde este mensaje como comprobante pers
             className="w-full bg-flameOrange hover:bg-flameOrangeHover active:scale-[0.98] text-warmCream font-extrabold py-3.5 px-4 rounded-xl text-sm sm:text-base flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xl shadow-flameOrange/20"
           >
             <Utensils className="w-4 h-4" />
-            <span>Pedir algo más para la Mesa #{order.tableNumber}</span>
+            <span>Pedir algo más para la Mesa {cleanTableNumber(order.tableNumber)}</span>
           </button>
         </div>
       </div>
