@@ -294,10 +294,13 @@ export default function App() {
     });
   };
 
-  // Confirmar y agregar platillo personalizado desde el modal
-  const handleConfirmCustomization = (customizedItem) => {
+  // Confirmar y agregar platillo personalizado desde el modal (con soporte para maridaje en 1 clic)
+  const handleConfirmCustomization = (customizedItem, pairedBeverage = null) => {
     setCart((prev) => {
-      const existingIndex = prev.findIndex(
+      let updated = [...prev];
+
+      // 1. Agregar o actualizar platillo principal
+      const existingIndex = updated.findIndex(
         (item) =>
           item.id === customizedItem.id &&
           item.selectedCookingPoint === customizedItem.selectedCookingPoint &&
@@ -306,16 +309,51 @@ export default function App() {
       );
 
       if (existingIndex > -1) {
-        const updated = [...prev];
         updated[existingIndex] = {
           ...updated[existingIndex],
           quantity: updated[existingIndex].quantity + customizedItem.quantity
         };
-        return updated;
+      } else {
+        updated.push(customizedItem);
       }
 
-      return [...prev, customizedItem];
+      // 2. Si se incluyó bebida recomendada del maridaje, sumarla en el mismo clic
+      const beverageToAdd = pairedBeverage || customizedItem.pairedBeverage;
+      if (beverageToAdd) {
+        const bevIndex = updated.findIndex(
+          (item) =>
+            item.id === beverageToAdd.id &&
+            !item.selectedCookingPoint &&
+            !item.selectedSide &&
+            !item.notes
+        );
+
+        if (bevIndex > -1) {
+          updated[bevIndex] = {
+            ...updated[bevIndex],
+            quantity: updated[bevIndex].quantity + 1
+          };
+        } else {
+          updated.push({
+            ...beverageToAdd,
+            quantity: 1,
+            selectedCookingPoint: null,
+            selectedSide: null,
+            notes: ''
+          });
+        }
+      }
+
+      return updated;
     });
+
+    if (pairedBeverage) {
+      setActiveToast({
+        type: 'success',
+        title: '¡Platillo & Maridaje Agregados!',
+        message: `${customizedItem.name.replace(/\s*\([^)]*\)$/, '')} y ${pairedBeverage.name} se agregaron a tu orden.`
+      });
+    }
   };
 
   // Actualizar cantidad de un item en el carrito

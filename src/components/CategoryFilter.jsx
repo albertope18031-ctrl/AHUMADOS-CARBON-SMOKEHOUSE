@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flame, Beef, Sandwich, UtensilsCrossed, Beer } from 'lucide-react';
+import { Flame, Beef, Sandwich, UtensilsCrossed, Beer, CakeSlice } from 'lucide-react';
 import { CATEGORIES } from '../data/menuData';
 
 // Mapeo dinámico de íconos de Lucide React
@@ -8,7 +8,8 @@ const ICON_MAP = {
   Beef,
   Sandwich,
   UtensilsCrossed,
-  Beer
+  Beer,
+  CakeSlice
 };
 
 export default function CategoryFilter({

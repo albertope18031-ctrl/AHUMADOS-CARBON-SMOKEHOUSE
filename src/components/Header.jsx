@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Receipt } from 'lucide-react';
+import { ShoppingBag, Receipt, Wifi } from 'lucide-react';
 import { RESTAURANT_INFO } from '../data/menuData';
 import { cleanTableNumber } from '../utils/textUtils';
+import WifiModal from './WifiModal';
 
 export default function Header({
   orderMode: controlledOrderMode,
@@ -17,6 +18,7 @@ export default function Header({
 }) {
   // Estado local si no se provee por props controladas
   const [internalOrderMode, setInternalOrderMode] = useState('mesa');
+  const [isWifiModalOpen, setIsWifiModalOpen] = useState(false);
 
   const currentMode = controlledOrderMode !== undefined ? controlledOrderMode : internalOrderMode;
   const handleModeChange = (mode) => {
@@ -59,11 +61,21 @@ export default function Header({
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-charcoal/95 backdrop-blur-md border-b border-charcoalBorder">
-      {/* Barra superior delgada de estado */}
-      <div className="bg-[#0d0d0d] py-1 px-3 border-b border-charcoalBorder/50 flex items-center justify-between max-w-7xl mx-auto">
-        <p className="text-[11px] sm:text-xs text-warmCream/90 font-medium tracking-tight truncate sm:text-clip mx-auto sm:mx-0">
+      {/* Barra superior delgada de estado & Acceso a Wi-Fi */}
+      <div className="bg-[#0d0d0d] py-1 px-3 sm:px-6 border-b border-charcoalBorder/50 flex items-center justify-between max-w-7xl mx-auto gap-2">
+        <p className="text-[11px] sm:text-xs text-warmCream/90 font-medium tracking-tight truncate">
           {RESTAURANT_INFO.status || "🟢 Abierto hoy • Fuego encendido hasta las 11:00 PM"}
         </p>
+
+        <button
+          type="button"
+          onClick={() => setIsWifiModalOpen(true)}
+          className="px-2.5 py-1 rounded-full text-xs font-medium bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 select-none active:scale-95 hover:border-neutral-700"
+          aria-label="Ver datos de conexión Wi-Fi de cortesía"
+        >
+          <Wifi className="w-3.5 h-3.5 text-amber-400" />
+          <span>Wi-Fi Clientes</span>
+        </button>
       </div>
 
       {/* DISEÑO EN ESCRITORIO (md:flex o superior) */}
@@ -225,6 +237,12 @@ export default function Header({
           )}
         </div>
       </div>
+
+      {/* Modal de Acceso a Wi-Fi de Cortesía con Copiado al Portapapeles */}
+      <WifiModal
+        isOpen={isWifiModalOpen}
+        onClose={() => setIsWifiModalOpen(false)}
+      />
     </header>
   );
 }

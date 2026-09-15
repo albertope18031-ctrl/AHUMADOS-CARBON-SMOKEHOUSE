@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Minus, Plus, Flame, Utensils } from 'lucide-react';
-import { COOKING_POINTS, SIDE_OPTIONS } from '../data/menuData';
+import { X, Minus, Plus, Flame, Utensils, Check } from 'lucide-react';
+import { COOKING_POINTS, SIDE_OPTIONS, DEFAULT_PAIRING } from '../data/menuData';
 
 export default function CustomizationModal({
   isOpen,
@@ -12,6 +12,7 @@ export default function CustomizationModal({
   const [selectedSide, setSelectedSide] = useState('');
   const [notes, setNotes] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [includePairing, setIncludePairing] = useState(false);
   const [modalImageFailed, setModalImageFailed] = useState(false);
 
   // Inicializar o restablecer estados cada vez que se selecciona un platillo
@@ -21,6 +22,7 @@ export default function CustomizationModal({
       setSelectedSide(SIDE_OPTIONS[0] || '');
       setNotes('');
       setQuantity(1);
+      setIncludePairing(false);
       setModalImageFailed(false);
     }
   }, [dish]);
@@ -60,19 +62,25 @@ export default function CustomizationModal({
     setModalImageFailed(true);
   };
 
-  const totalPrice = (Number(dish.price || 0) * quantity).toFixed(2);
+  const isMainDish = ['ahumados', 'cortes', 'burgers'].includes(dish?.categoryId);
+  const pairingItem = dish?.suggestedPairing || DEFAULT_PAIRING;
+  const pairingPrice = includePairing && isMainDish ? Number(pairingItem.price || 0) : 0;
+  const totalPrice = ((Number(dish.price || 0) * quantity) + pairingPrice).toFixed(2);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (onConfirm) {
-      onConfirm({
-        ...dish,
-        quantity,
-        selectedCookingPoint: dish.requiresCookingPoint ? selectedCookingPoint : null,
-        selectedSide: dish.hasSideOptions ? selectedSide : null,
-        notes: notes.trim(),
-        totalPrice: Number(dish.price || 0) * quantity
-      });
+      onConfirm(
+        {
+          ...dish,
+          quantity,
+          selectedCookingPoint: dish.requiresCookingPoint ? selectedCookingPoint : null,
+          selectedSide: dish.hasSideOptions ? selectedSide : null,
+          notes: notes.trim(),
+          totalPrice: Number(dish.price || 0) * quantity
+        },
+        includePairing && isMainDish ? pairingItem : null
+      );
     }
     onClose();
   };
@@ -314,6 +322,64 @@ export default function CustomizationModal({
                 </button>
               </div>
             </div>
+
+            {/* 4. Maridaje Recomendado del Asador (Venta cruzada en 1 clic) */}
+            {isMainDish && pairingItem && (
+              <div className="pt-3 border-t border-charcoalBorder space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-neutral-300 flex items-center gap-1.5 uppercase tracking-wider">
+                    <span>🍻</span> Maridaje recomendado del Asador
+                  </h3>
+                  <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-semibold">
+                    Sugerencia del Asador
+                  </span>
+                </div>
+
+                <div
+                  onClick={() => setIncludePairing(!includePairing)}
+                  className={`p-3 rounded-xl border transition-all cursor-pointer select-none flex items-center justify-between gap-3 ${
+                    includePairing
+                      ? 'bg-amber-500/15 border-amber-500 text-white shadow-sm'
+                      : 'bg-[#171717] border-charcoalBorder text-neutral-400 hover:border-neutral-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center text-xl shrink-0">
+                      🍺
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-xs sm:text-sm font-bold text-white block truncate">
+                        {pairingItem.name}
+                      </span>
+                      <span className="text-xs text-amber-400 font-semibold block">
+                        +${Number(pairingItem.price).toFixed(2)} MXN
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                      includePairing
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-200'
+                    }`}
+                  >
+                    {includePairing ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-white" />
+                        <span>Agregado</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Agregar bebida</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Botón inferior de confirmación */}
             <div className="pt-4">

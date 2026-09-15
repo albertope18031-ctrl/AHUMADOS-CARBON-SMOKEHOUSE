@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Receipt, CreditCard, Banknote, FileText, Check, X, MessageSquare, Sparkles, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Receipt, CreditCard, Banknote, FileText, Check, X, MessageSquare, Sparkles, CheckCircle2, RotateCcw, Users, Plus, Minus } from 'lucide-react';
 import { RESTAURANT_INFO } from '../data/menuData';
 import { cleanTableNumber } from '../utils/textUtils';
 
@@ -16,15 +16,17 @@ export default function RequestBillModal({
   const [cashDenomination, setCashDenomination] = useState('');
   const [tipPercentage, setTipPercentage] = useState(15); // 0, 10, 15, 20, 'custom'
   const [customTip, setCustomTip] = useState('');
+  const [splitCount, setSplitCount] = useState(1);
   const [wantsInvoice, setWantsInvoice] = useState(false);
   const [rfc, setRfc] = useState('');
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Reiniciar estado de envío al abrir modal
+  // Reiniciar estado al abrir modal
   useEffect(() => {
     if (isOpen) {
       setIsSubmitted(false);
+      setSplitCount(1);
     }
   }, [isOpen]);
 
@@ -56,6 +58,7 @@ export default function RequestBillModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const perPerson = splitCount > 1 ? grandTotal / splitCount : grandTotal;
     if (onConfirmBill) {
       onConfirmBill({
         tableNumber: sanitizedTable,
@@ -65,6 +68,8 @@ export default function RequestBillModal({
         tipAmount: calculatedTip,
         baseTotal,
         grandTotal,
+        splitCount,
+        perPersonAmount: perPerson,
         wantsInvoice,
         rfc: wantsInvoice ? rfc.trim().toUpperCase() : null,
         email: wantsInvoice ? email.trim() : null
@@ -77,13 +82,14 @@ export default function RequestBillModal({
   const handleWhatsAppAlert = () => {
     const methodStr = paymentMethod === 'card' ? 'Terminal en Mesa (Tarjeta)' : `Efectivo ${cashDenomination ? `(Paga con: $${cashDenomination})` : ''}`;
     const invoiceStr = wantsInvoice ? `\n📄 Requiere Factura: RFC ${rfc || 'Pendiente'} (${email || 'Sin correo'})` : '';
+    const splitStr = splitCount > 1 ? `\n👥 *Dividir Cuenta:* Entre ${splitCount} personas ($${(grandTotal / splitCount).toFixed(2)} MXN c/u)` : '';
     const message = `🧾 *SOLICITUD DE CUENTA - AHUMADOS & CARBÓN SMOKEHOUSE* 🧾
 --------------------------------------------------
 📍 *Mesa:* ${sanitizedTable ? `Mesa ${sanitizedTable}` : 'Sin especificar'}
 💳 *Método de pago:* ${methodStr}
 💰 *Consumo Base:* $${baseTotal.toFixed(2)} MXN
 ⭐ *Propina sugerida:* $${calculatedTip.toFixed(2)} MXN (${tipPercentage === 'custom' ? 'Monto libre' : `${tipPercentage}%`})
-💵 *TOTAL ESPERADO:* $${grandTotal.toFixed(2)} MXN${invoiceStr}
+💵 *TOTAL ESPERADO:* $${grandTotal.toFixed(2)} MXN${splitStr}${invoiceStr}
 --------------------------------------------------
 Por favor llevar la cuenta / terminal a la mesa.`;
 
@@ -357,6 +363,59 @@ Por favor llevar la cuenta / terminal a la mesa.`;
                 <span className="text-2xl font-black text-white">
                   ${grandTotal.toFixed(2)} MXN
                 </span>
+              </div>
+
+              {/* 3. Calculadora Interactiva de "Dividir Cuenta" (Split the Bill) */}
+              <div className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-neutral-300 flex items-center gap-1.5">
+                    <Users className="w-4 h-4 text-amber-400" />
+                    <span>Dividir entre comensales:</span>
+                  </label>
+
+                  <div className="flex items-center gap-1.5 bg-neutral-900 border border-neutral-700/80 rounded-xl p-1">
+                    <button
+                      type="button"
+                      onClick={() => setSplitCount((prev) => Math.max(1, prev - 1))}
+                      disabled={splitCount <= 1}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-300 hover:text-white hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      aria-label="Menos personas"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+
+                    <span className="w-16 text-center text-xs font-bold text-white select-none">
+                      {splitCount} {splitCount === 1 ? 'persona' : 'personas'}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => setSplitCount((prev) => Math.min(12, prev + 1))}
+                      disabled={splitCount >= 12}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-300 hover:text-white hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      aria-label="Más personas"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Recuadro destacado con cálculo en tiempo real cuando personas > 1 */}
+                {splitCount > 1 && (
+                  <div className="pt-2.5 border-t border-neutral-800/80 bg-amber-500/10 border border-amber-500/25 rounded-xl p-3 flex items-center justify-between gap-2 animate-in fade-in duration-200">
+                    <div>
+                      <span className="text-xs font-bold text-amber-300 uppercase tracking-wider block">
+                        Total por persona:
+                      </span>
+                      <span className="text-[11px] text-neutral-400 leading-tight block mt-0.5">
+                        Monto sugerido para cobrar a cada comensal con tarjeta o efectivo
+                      </span>
+                    </div>
+                    <span className="text-xl font-black text-amber-400 whitespace-nowrap ml-2">
+                      ${(grandTotal / splitCount).toFixed(2)} <span className="text-xs text-neutral-400 font-normal">MXN</span>
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Botón de confirmación */}
