@@ -5,9 +5,8 @@ import CategoryFilter from './components/CategoryFilter';
 import DishCard from './components/DishCard';
 import CustomizationModal from './components/CustomizationModal';
 import CartDrawer from './components/CartDrawer';
-import MobileBottomCart from './components/MobileBottomCart';
+import UnifiedBottomBar from './components/UnifiedBottomBar';
 import OrderSuccessModal from './components/OrderSuccessModal';
-import TableServiceBar from './components/TableServiceBar';
 import CallWaiterModal from './components/CallWaiterModal';
 import RequestBillModal from './components/RequestBillModal';
 import ToastNotification from './components/ToastNotification';
@@ -51,7 +50,32 @@ export default function App() {
   });
 
   // Modalidad de orden: si viene mesa en URL, se fuerza 'mesa'
-  const [orderType, setOrderType] = useState('mesa');
+  const [orderType, setOrderType] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mesa') || params.get('table')) {
+        return 'mesa';
+      }
+    }
+    return 'mesa';
+  });
+
+  // 1.1 Lectura y verificación automática de mesa vía Código QR al cargar la página
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const paramTable = params.get('mesa') || params.get('table');
+      if (paramTable) {
+        const cleaned = cleanTableNumber(paramTable);
+        setTableNumber(cleaned);
+        setIsTableLocked(true);
+        setOrderType('mesa');
+        try {
+          localStorage.setItem('smokehouse_table', cleaned);
+        } catch (e) {}
+      }
+    }
+  }, []);
 
   // Estados del carrito y navegación
   const [cart, setCart] = useState([]);
@@ -110,20 +134,6 @@ export default function App() {
   // Totales de la orden activa en carrito
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-  // 4. Ajuste dinámico del espaciado inferior del catálogo según la modalidad y el estado del carrito
-  const isMesaMode = orderType === 'mesa';
-  const hasBottomCart = cartCount > 0 || Boolean(activeConfirmedOrder);
-
-  const mainPaddingClass = isMesaMode
-    ? "pb-32 sm:pb-36 md:pb-16"
-    : (hasBottomCart ? "pb-20 sm:pb-24 md:pb-16" : "pb-12 sm:pb-16 md:pb-12");
-
-  const mainPaddingStyle = isMesaMode
-    ? { paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8.5rem)' }
-    : (hasBottomCart
-        ? { paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.5rem)' }
-        : { paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 2rem)' });
 
   // Estados de búsqueda en tiempo real y chips de filtros rápidos
   const [searchQuery, setSearchQuery] = useState('');
@@ -366,10 +376,10 @@ export default function App() {
           }}
         />
 
-        {/* Cuadrícula del catálogo o estado vacío con compensación ergonómica dinámica según modalidad */}
+        {/* Cuadrícula del catálogo o estado vacío con compensación ergonómica fija inferior */}
         <main 
-          className={`max-w-7xl mx-auto px-4 py-6 sm:py-8 transition-all duration-300 ease-in-out ${mainPaddingClass}`}
-          style={mainPaddingStyle}
+          className="max-w-7xl mx-auto px-4 py-6 sm:py-8 pb-28 sm:pb-32"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 7.5rem)' }}
         >
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
@@ -480,31 +490,17 @@ export default function App() {
         onOpenInvoiceModal={() => setIsInvoiceModalOpen(true)}
       />
 
-      {/* Botonera Flotante de Asistencia en Sala (Llamar Mesero / Pedir Cuenta): ÚNICAMENTE EN MODALIDAD EN MESA */}
-      {orderType === 'mesa' && (
-        <TableServiceBar
-          isVisible={true}
-          tableNumber={tableNumber}
-          onCallWaiter={() => setIsCallWaiterOpen(true)}
-          onRequestBill={() => setIsRequestBillOpen(true)}
-          hasBottomCart={hasBottomCart}
-          cooldownSeconds={waiterCooldown}
-        />
-      )}
-
-      {/* Barra flotante inferior fija en móvil (dock modular con carrito y atención en mesa) */}
-      <MobileBottomCart
-        cart={cart}
-        totalItems={cartCount}
-        totalAmount={cartTotal}
+      {/* Barra inferior fija única y ergonómica (asistencia en mesa + botón principal de orden) */}
+      <UnifiedBottomBar
+        orderType={orderType}
+        cartCount={cartCount}
+        cartTotal={cartTotal}
         onOpenCart={() => setIsCartOpen(true)}
-        activeOrder={activeConfirmedOrder}
-        onOpenActiveTicket={() => setIsSuccessModalOpen(true)}
-        isTableServiceVisible={orderType === 'mesa'}
-        tableNumber={tableNumber}
         onCallWaiter={() => setIsCallWaiterOpen(true)}
         onRequestBill={() => setIsRequestBillOpen(true)}
         cooldownSeconds={waiterCooldown}
+        activeOrder={activeConfirmedOrder}
+        onOpenActiveTicket={() => setIsSuccessModalOpen(true)}
       />
 
       {/* Modal interactivo para Llamar al Mesero con selección de motivo */}
@@ -545,29 +541,6 @@ export default function App() {
         onClose={() => setIsSuccessModalOpen(false)}
         onNewRound={() => setIsSuccessModalOpen(false)}
       />
-
-      {/* Botón flotante en Desktop para consultar ticket activo */}
-      {activeConfirmedOrder && (
-        <div className="hidden md:flex fixed bottom-6 right-6 z-40 animate-in slide-in-from-bottom-5">
-          <button
-            type="button"
-            onClick={() => setIsSuccessModalOpen(true)}
-            className="bg-charcoalCard/95 hover:bg-[#252525] border border-badgeGold/50 text-warmCream px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
-          >
-            <span className="p-2 rounded-xl bg-badgeGold/15 text-badgeGold">
-              <Receipt className="w-5 h-5" />
-            </span>
-            <div className="text-left">
-              <span className="text-xs font-bold text-warmCream block">
-                Mesa #{activeConfirmedOrder.tableNumber} • Comanda en Cocina
-              </span>
-              <span className="text-[11px] text-badgeGold font-mono font-semibold">
-                {activeConfirmedOrder.folio} • Ver Ticket
-              </span>
-            </div>
-          </button>
-        </div>
-      )}
 
       {/* Pie de página con datos de contacto, enlaces interactivos y sello de autoridad */}
       <Footer onOpenInvoiceModal={() => setIsInvoiceModalOpen(true)} />

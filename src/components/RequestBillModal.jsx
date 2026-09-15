@@ -79,7 +79,7 @@ Por favor llevar la cuenta / terminal a la mesa.`;
 
   return (
     <div
-      className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="request-bill-title"
@@ -87,12 +87,12 @@ Por favor llevar la cuenta / terminal a la mesa.`;
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-charcoalCard border border-charcoalBorder rounded-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-5 sm:p-6 text-warmCream shadow-2xl relative my-auto animate-in zoom-in-95 duration-200">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-5 sm:p-6 text-warmCream shadow-2xl relative my-auto animate-in zoom-in-95 duration-200">
         {/* Botón de cierre */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-warmMuted hover:text-warmCream bg-[#171717] hover:bg-[#252525] p-2 rounded-full border border-charcoalBorder transition-colors cursor-pointer"
+          className="absolute top-4 right-4 text-neutral-400 hover:text-white bg-neutral-800 hover:bg-neutral-700 p-2 rounded-full border border-neutral-700 transition-colors cursor-pointer"
           aria-label="Cerrar modal"
         >
           <X className="w-5 h-5" />

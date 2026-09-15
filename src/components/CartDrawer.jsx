@@ -182,75 +182,80 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
             </button>
           </div>
 
-          {/* Selector interactivo de Modalidad en el carrito */}
-          <div className="px-5 pt-4">
-            <div className="bg-[#121212] p-1 rounded-xl border border-charcoalBorder flex items-center">
-              <button
-                type="button"
-                onClick={() => setOrderType && setOrderType('mesa')}
-                className={`flex-1 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
-                  orderType === 'mesa'
-                    ? 'bg-flameOrange text-warmCream shadow-md'
-                    : 'text-warmMuted hover:text-warmCream'
-                }`}
-              >
-                <span>🍽️</span>
-                <span>En Mesa {cleanTableNumber(currentTable) ? `(Mesa ${cleanTableNumber(currentTable)})` : ''}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setOrderType && setOrderType('llevar')}
-                className={`flex-1 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
-                  orderType === 'llevar'
-                    ? 'bg-flameOrange text-warmCream shadow-md'
-                    : 'text-warmMuted hover:text-warmCream'
-                }`}
-              >
-                <span>🛍️</span>
-                <span>Para Llevar</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Formulario de campos requeridos según la modalidad */}
-          <div className="px-5 pt-3 pb-2">
+          {/* Información y datos del pedido según la modalidad activa en la cabecera */}
+          <div className="px-5 pt-4 pb-2">
             {orderType === 'mesa' ? (
-              <div className="bg-charcoalCard/90 border border-charcoalBorder rounded-xl p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <label
-                    htmlFor="cart-table-number"
-                    className="text-xs font-bold text-warmCream flex items-center gap-1.5"
-                  >
-                    <Hash className="w-3.5 h-3.5 text-flameOrange" />
-                    Número de Mesa <span className="text-flameOrange">*</span>
-                  </label>
-                  {isTableLocked && (
-                    <span className="text-[10px] text-badgeGold bg-badgeGold/10 px-2 py-0.5 rounded border border-badgeGold/20 flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Asignada por QR
+              <div className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-2 rounded-lg bg-flameOrange/15 text-flameOrange text-base">🍽️</span>
+                    <div>
+                      <span className="text-xs font-bold text-warmCream block">
+                        Servicio en Mesa
+                      </span>
+                      <span className="text-xs text-amber-400 font-semibold">
+                        {cleanTableNumber(currentTable)
+                          ? `📍 Mesa ${cleanTableNumber(currentTable)}`
+                          : '📍 Mesa no asignada'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {isTableLocked ? (
+                    <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20 flex items-center gap-1 font-semibold">
+                      <Lock className="w-3 h-3" /> Fija por QR
                     </span>
-                  )}
+                  ) : cleanTableNumber(currentTable) ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nuevo = window.prompt("Ingresa o cambia tu número de mesa:", currentTable);
+                        if (nuevo !== null) {
+                          const cleaned = cleanTableNumber(nuevo);
+                          setInternalTableNumber(cleaned);
+                          if (setTableNumber) setTableNumber(cleaned);
+                        }
+                      }}
+                      className="text-xs text-warmMuted hover:text-warmCream underline cursor-pointer p-1"
+                    >
+                      Cambiar
+                    </button>
+                  ) : null}
                 </div>
 
-                <input
-                  id="cart-table-number"
-                  type="text"
-                  value={currentTable}
-                  readOnly={isTableLocked}
-                  onChange={(e) => {
-                    if (!isTableLocked) {
-                      const cleaned = cleanTableNumber(e.target.value);
-                      setInternalTableNumber(cleaned);
-                      if (setTableNumber) setTableNumber(cleaned);
-                    }
-                  }}
-                  placeholder="Ej. 5"
-                  className={`w-full bg-[#171717] border border-charcoalBorder rounded-lg px-3 py-2 text-sm text-warmCream placeholder:text-warmMuted/60 transition-colors ${
-                    isTableLocked ? 'cursor-not-allowed text-badgeGold font-bold bg-[#131313]' : 'focus:outline-none focus:border-flameOrange'
-                  }`}
-                />
+                {/* Si aún no se ha ingresado número de mesa, input directo */}
+                {!cleanTableNumber(currentTable) && (
+                  <div className="pt-2 border-t border-neutral-800">
+                    <label
+                      htmlFor="cart-table-number"
+                      className="block text-xs font-bold text-warmCream mb-1 flex items-center gap-1.5"
+                    >
+                      <Hash className="w-3.5 h-3.5 text-flameOrange" />
+                      Indica tu Número de Mesa <span className="text-flameOrange">*</span>
+                    </label>
+                    <input
+                      id="cart-table-number"
+                      type="text"
+                      value={currentTable}
+                      onChange={(e) => {
+                        const cleaned = cleanTableNumber(e.target.value);
+                        setInternalTableNumber(cleaned);
+                        if (setTableNumber) setTableNumber(cleaned);
+                      }}
+                      placeholder="Ej. 5"
+                      className="w-full bg-[#171717] border border-charcoalBorder rounded-lg px-3 py-2 text-sm text-warmCream placeholder:text-warmMuted/60 focus:outline-none focus:border-flameOrange transition-colors"
+                    />
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="bg-charcoalCard/90 border border-charcoalBorder rounded-xl p-3 space-y-3">
+              <div className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-3.5 space-y-3">
+                <div className="flex items-center gap-2 pb-1 border-b border-neutral-800">
+                  <span className="text-base">🛍️</span>
+                  <span className="text-xs font-bold text-warmCream">
+                    Pedido Para Llevar
+                  </span>
+                </div>
                 <div>
                   <label
                     htmlFor="cart-customer-name"
@@ -281,7 +286,7 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
                     type="text"
                     value={pickupTime}
                     onChange={(e) => setPickupTime(e.target.value)}
-                    placeholder="Ej. 8:30 PM o En 25 minutos"
+                    placeholder="Ej. 8:30 PM o En 20 min"
                     className="w-full bg-[#171717] border border-charcoalBorder rounded-lg px-3 py-2 text-sm text-warmCream placeholder:text-warmMuted/60 focus:outline-none focus:border-flameOrange transition-colors"
                   />
                 </div>
