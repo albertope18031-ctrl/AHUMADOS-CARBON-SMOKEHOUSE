@@ -17,6 +17,14 @@ export const CATEGORIES = [
   { id: "cerveza", name: "Cervecería & Tragos", icon: "Beer" }
 ];
 
+export const QUICK_FILTERS = [
+  { id: "especialidad", label: "Especialidades", icon: "⭐" },
+  { id: "para-compartir", label: "Para Compartir", icon: "👥" },
+  { id: "picante", label: "Picante", icon: "🌶️" },
+  { id: "sin-gluten", label: "Sin Gluten", icon: "🌾" },
+  { id: "ligero", label: "Opciones Ligeras / Verdes", icon: "🥗" }
+];
+
 export const DISHES = [
   // Categoría A: Ahumados Low & Slow
   {
@@ -28,7 +36,10 @@ export const DISHES = [
     image: "/images/menu/costillas-st-louis.png",
     description: "Costillar entero cocinado a fuego indirecto con leña de encino durante 8 horas. Bañado con nuestro glaseado BBQ artesanal especiado. Se desprende del hueso solo con mirarlo. Incluye elote dulce tatemado y ensalada de col fresca.",
     requiresCookingPoint: false,
-    hasSideOptions: true
+    hasSideOptions: true,
+    tags: ["ahumado", "especialidad", "para-compartir", "sin-gluten"],
+    isSpecialty: true,
+    isTopSeller: true
   },
   {
     id: "brisket-tejano",
@@ -39,7 +50,10 @@ export const DISHES = [
     image: "/images/menu/brisket-tejano-prime.png",
     description: "Corte de pecho de res calidad Prime con corteza crocante de pimienta negra martajada y sal kosher. Jugosidad absoluta y anillo de humo pronunciado. Servido con pepinillos encurtidos en casa y cebolla morada.",
     requiresCookingPoint: false,
-    hasSideOptions: true
+    hasSideOptions: true,
+    tags: ["ahumado", "especialidad", "sin-gluten", "para-compartir"],
+    isSpecialty: true,
+    isTopSeller: true
   },
   {
     id: "pulled-pork-sandwich",
@@ -50,7 +64,10 @@ export const DISHES = [
     image: "/images/menu/pulled-pork-sandwich.png",
     description: "Espaldilla de cerdo deshebrada a mano, marinada en vinagre de manzana y especias, coronada con ensalada coleslaw crujiente dentro de un pan brioche tostado con mantequilla.",
     requiresCookingPoint: false,
-    hasSideOptions: true
+    hasSideOptions: true,
+    tags: ["ahumado", "top-ventas"],
+    isSpecialty: false,
+    isTopSeller: true
   },
   // Categoría B: Cortes a la Leña
   {
@@ -62,7 +79,10 @@ export const DISHES = [
     image: "/images/menu/rib-eye-asador.png",
     description: "Corte grueso con marmoleo superior asado a las brasas vivas de mezquite, sellado con costra de sal de grano y mantequilla de romero y ajo. Servido con chiles toreados y cebollas cambray.",
     requiresCookingPoint: true,
-    hasSideOptions: true
+    hasSideOptions: true,
+    tags: ["especialidad", "sin-gluten", "para-compartir", "picante"],
+    isSpecialty: true,
+    isTopSeller: false
   },
   {
     id: "vacio-res",
@@ -73,7 +93,10 @@ export const DISHES = [
     image: "/images/menu/vacio-res.png",
     description: "Jugoso y de textura firme, cocinado a punto con chimichurri rústico tatemado de la casa y papas al ajillo.",
     requiresCookingPoint: true,
-    hasSideOptions: true
+    hasSideOptions: true,
+    tags: ["sin-gluten", "para-compartir"],
+    isSpecialty: false,
+    isTopSeller: false
   },
   // Categoría C: Hamburguesas Monster al Carbón
   {
@@ -85,7 +108,10 @@ export const DISHES = [
     image: "/images/menu/la-brasa-burger.png",
     description: "200g de mezcla artesanal de Rib Eye y Short Rib sellada al carbón, queso cheddar añejo gratinado, tocino ahumado grueso glaseado en maple, cebolla caramelizada al bourbon y aderezo especial en pan brioche.",
     requiresCookingPoint: true,
-    hasSideOptions: true
+    hasSideOptions: true,
+    tags: ["especialidad", "top-ventas", "ahumado"],
+    isSpecialty: true,
+    isTopSeller: true
   },
   {
     id: "black-truffle-burger",
@@ -96,7 +122,10 @@ export const DISHES = [
     image: "/images/menu/black-truffle-burger.png",
     description: "200g de carne de res al fuego, queso suizo emmental derretido, champiñones salteados al sartén de hierro y mayonesa infusionada con trufa negra y ajo confitado.",
     requiresCookingPoint: true,
-    hasSideOptions: true
+    hasSideOptions: true,
+    tags: ["especialidad", "gourmet"],
+    isSpecialty: true,
+    isTopSeller: false
   },
   // Categoría D: Entradas & Cerveza
   {
@@ -108,7 +137,10 @@ export const DISHES = [
     image: "/images/menu/papas-rusticas-trufadas.png",
     description: "Gajos de papa con piel fritos al punto crujiente, espolvoreados con queso parmesano recién rallado, perejil fresco y aceite de trufa blanca.",
     requiresCookingPoint: false,
-    hasSideOptions: false
+    hasSideOptions: false,
+    tags: ["vegetariano", "para-compartir", "sin-gluten", "ligero"],
+    isSpecialty: false,
+    isTopSeller: false
   },
   {
     id: "tuetanos-brasa",
@@ -119,7 +151,10 @@ export const DISHES = [
     image: "/images/menu/tuetanos-brasa.png",
     description: "Canoas de tuétano asadas con sal de mar, acompañadas de chimichurri caliente y tortillas de maíz recién hechas para armar tacos.",
     requiresCookingPoint: false,
-    hasSideOptions: false
+    hasSideOptions: false,
+    tags: ["especialidad", "para-compartir", "picante", "sin-gluten"],
+    isSpecialty: true,
+    isTopSeller: false
   },
   {
     id: "ipa-artesanal",
@@ -130,7 +165,10 @@ export const DISHES = [
     image: "/images/menu/ipa-artesanal.png",
     description: "Cerveza lupulada de cuerpo medio con marcadas notas cítricas y resinosas. El maridaje perfecto para limpiar el paladar entre cortes grasos.",
     requiresCookingPoint: false,
-    hasSideOptions: false
+    hasSideOptions: false,
+    tags: ["bebida", "artesanal", "ligero"],
+    isSpecialty: false,
+    isTopSeller: false
   }
 ];
 

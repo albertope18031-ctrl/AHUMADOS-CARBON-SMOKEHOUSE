@@ -12,9 +12,11 @@ import CallWaiterModal from './components/CallWaiterModal';
 import RequestBillModal from './components/RequestBillModal';
 import ToastNotification from './components/ToastNotification';
 import Footer from './components/Footer';
-import { Receipt, Flame } from 'lucide-react';
+import MenuSearchAndFilters from './components/MenuSearchAndFilters';
+import { Receipt, Flame, RotateCcw } from 'lucide-react';
 import { CATEGORIES, DISHES } from './data/menuData';
 import { sendServiceNotification } from './utils/serviceNotifications';
+import { normalizeString } from './utils/textUtils';
 
 export default function App() {
   // 1. Detección automática de mesa vía URL (?mesa=4 o ?table=4) o localStorage
@@ -84,8 +86,74 @@ export default function App() {
     return () => clearInterval(interval);
   }, [waiterCooldown]);
 
-  // Filtrado de platillos según categoría activa
-  const filteredDishes = DISHES.filter((dish) => dish.categoryId === activeCategory);
+  // Estados de búsqueda en tiempo real y chips de filtros rápidos
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilters, setSelectedFilters] = useState([]);
+
+  const handleToggleFilter = (filterId) => {
+    setSelectedFilters((prev) =>
+      prev.includes(filterId)
+        ? prev.filter((id) => id !== filterId)
+        : [...prev, filterId]
+    );
+  };
+
+  const handleClearAllFilters = () => {
+    setSearchQuery('');
+    setSelectedFilters([]);
+  };
+
+  const isFiltering = searchQuery.trim().length > 0 || selectedFilters.length > 0;
+  const normalizedQuery = normalizeString(searchQuery);
+
+  // Filtrado de platillos según categoría activa o búsqueda global + filtros rápidos
+  const filteredDishes = DISHES.filter((dish) => {
+    // Si no hay filtro ni búsqueda activa, filtrar por categoría activa
+    if (!isFiltering) {
+      return dish.categoryId === activeCategory;
+    }
+
+    // 1. Validar filtros rápidos seleccionados (todos los seleccionados deben coincidir)
+    const matchesQuickFilters = selectedFilters.every((filterId) => {
+      if (filterId === 'especialidad') {
+        return Boolean(dish.isSpecialty || dish.tags?.includes('especialidad'));
+      }
+      if (filterId === 'para-compartir') {
+        return Boolean(dish.tags?.includes('para-compartir'));
+      }
+      if (filterId === 'picante') {
+        return Boolean(dish.tags?.includes('picante'));
+      }
+      if (filterId === 'sin-gluten') {
+        return Boolean(dish.tags?.includes('sin-gluten'));
+      }
+      if (filterId === 'ligero') {
+        return Boolean(dish.tags?.includes('ligero') || dish.tags?.includes('vegetariano'));
+      }
+      return Boolean(dish.tags?.includes(filterId));
+    });
+
+    if (!matchesQuickFilters) return false;
+
+    // 2. Si no hay texto de búsqueda escrito, basta con que cumpla los quick filters
+    if (!normalizedQuery) return true;
+
+    // 3. Validar coincidencia de texto en nombre, descripción, tags, badge y categoría
+    const nameNorm = normalizeString(dish.name);
+    const descNorm = normalizeString(dish.description);
+    const badgeNorm = normalizeString(dish.badge || '');
+    const tagsNorm = (dish.tags || []).map(normalizeString);
+    const categoryObj = CATEGORIES.find((c) => c.id === dish.categoryId);
+    const categoryNorm = categoryObj ? normalizeString(categoryObj.name) : '';
+
+    return (
+      nameNorm.includes(normalizedQuery) ||
+      descNorm.includes(normalizedQuery) ||
+      badgeNorm.includes(normalizedQuery) ||
+      categoryNorm.includes(normalizedQuery) ||
+      tagsNorm.some((tag) => tag.includes(normalizedQuery))
+    );
+  });
 
   // Totales de la orden activa en carrito
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -238,20 +306,37 @@ export default function App() {
         {/* Hero visual compacto */}
         <Hero />
 
+        {/* Barra de búsqueda en tiempo real y chips deslizables de filtros rápidos */}
+        <MenuSearchAndFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedFilters={selectedFilters}
+          onToggleFilter={handleToggleFilter}
+          onClearAll={handleClearAllFilters}
+          totalResults={filteredDishes.length}
+          isFiltering={isFiltering}
+        />
+
         {/* Barra pegajosa con filtro de categorías deslizables */}
         <CategoryFilter
           categories={CATEGORIES}
           activeCategory={activeCategory}
-          onSelectCategory={setActiveCategory}
+          onSelectCategory={(categoryId) => {
+            setActiveCategory(categoryId);
+            // Si hay filtros o búsqueda activa y el comensal toca una categoría, limpiamos para mostrar la categoría elegida
+            if (isFiltering) {
+              handleClearAllFilters();
+            }
+          }}
         />
 
-        {/* Cuadrícula del catálogo con espacio suficiente para las botoneras flotantes */}
-        <main className="max-w-7xl mx-auto px-4 py-8 pb-36 md:pb-16">
+        {/* Cuadrícula del catálogo o estado vacío con espacio para botoneras móviles */}
+        <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8 pb-36 md:pb-16">
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl sm:text-2xl font-black text-warmCream tracking-tight">
-                  {CATEGORIES.find((c) => c.id === activeCategory)?.name || 'Platillos'}
+                  {isFiltering ? 'Platillos Encontrados' : (CATEGORIES.find((c) => c.id === activeCategory)?.name || 'Platillos')}
                 </h2>
                 {tableNumber && (
                   <span className="px-2.5 py-0.5 rounded-full bg-flameOrange/15 border border-flameOrange/30 text-flameOrange text-xs font-bold">
@@ -260,7 +345,9 @@ export default function App() {
                 )}
               </div>
               <p className="text-xs text-warmMuted mt-0.5">
-                Platillos preparados a la brasa y fuego indirecto con leña de encino y mezquite.
+                {isFiltering
+                  ? 'Búsqueda global en toda la carta por cortes, ingredientes y preferencias.'
+                  : 'Platillos preparados a la brasa y fuego indirecto con leña de encino y mezquite.'}
               </p>
             </div>
 
@@ -277,21 +364,56 @@ export default function App() {
               )}
 
               <span className="text-xs font-semibold px-3 py-1 rounded-full bg-charcoalCard border border-charcoalBorder text-warmMuted">
-                {filteredDishes.length} platillos en esta categoría
+                {filteredDishes.length} {filteredDishes.length === 1 ? 'platillo' : 'platillos'}
+                {isFiltering ? ' encontrados' : ' en esta categoría'}
               </span>
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredDishes.map((dish) => (
-              <DishCard
-                key={dish.id}
-                dish={dish}
-                onAddToCart={handleDirectAddToCart}
-                onCustomize={handleOpenCustomize}
-              />
-            ))}
-          </div>
+          {filteredDishes.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredDishes.map((dish) => (
+                <DishCard
+                  key={dish.id}
+                  dish={dish}
+                  onAddToCart={handleDirectAddToCart}
+                  onCustomize={handleOpenCustomize}
+                  categoryName={isFiltering ? CATEGORIES.find((c) => c.id === dish.categoryId)?.name : null}
+                />
+              ))}
+            </div>
+          ) : (
+            /* Estado Vacío Gastronómico */
+            <div className="py-14 sm:py-20 px-6 text-center max-w-lg mx-auto flex flex-col items-center bg-charcoalCard/50 border border-charcoalBorder rounded-3xl shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-flameOrange/10 border border-flameOrange/25 flex items-center justify-center mb-5 text-flameOrange shadow-inner">
+                <Flame className="w-8 h-8 sm:w-10 sm:h-10 animate-bounce text-flameOrange" />
+              </div>
+
+              <h3 className="text-lg sm:text-xl font-black text-warmCream mb-2 tracking-tight">
+                No encontramos platillos para tu búsqueda
+              </h3>
+
+              <p className="text-xs sm:text-sm text-warmCream/70 leading-relaxed mb-6">
+                No encontramos coincidencias para{' '}
+                {searchQuery.trim() ? (
+                  <span className="text-flameOrange font-bold">&ldquo;{searchQuery}&rdquo;</span>
+                ) : (
+                  'los filtros seleccionados'
+                )}
+                .{' '}
+                Prueba buscando términos como <span className="text-warmCream font-semibold">&ldquo;brisket&rdquo;</span>, <span className="text-warmCream font-semibold">&ldquo;costillas&rdquo;</span>, <span className="text-warmCream font-semibold">&ldquo;papas&rdquo;</span>, <span className="text-warmCream font-semibold">&ldquo;burger&rdquo;</span> o restablece los filtros activos.
+              </p>
+
+              <button
+                type="button"
+                onClick={handleClearAllFilters}
+                className="bg-flameOrange hover:bg-flameOrangeHover text-warmCream font-bold text-xs sm:text-sm px-6 py-3 rounded-xl transition-all duration-200 shadow-lg shadow-flameOrange/25 active:scale-95 cursor-pointer flex items-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Ver Menú Completo</span>
+              </button>
+            </div>
+          )}
         </main>
       </div>
 

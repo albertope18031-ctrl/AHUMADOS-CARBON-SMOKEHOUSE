@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Flame } from 'lucide-react';
 
-export default function DishCard({ dish, onAddToCart, onCustomize }) {
+export default function DishCard({ dish, onAddToCart, onCustomize, categoryName }) {
   const [imageFailed, setImageFailed] = useState(false);
 
   if (!dish) return null;
@@ -84,6 +84,12 @@ export default function DishCard({ dish, onAddToCart, onCustomize }) {
 
         {/* Contenido descriptivo del platillo */}
         <div className="p-4 sm:p-5">
+          {categoryName && (
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-flameOrange block mb-1">
+              {categoryName}
+            </span>
+          )}
+
           <h3 className="text-warmCream font-bold text-lg leading-snug group-hover:text-warmCream transition-colors">
             {dish.name}
           </h3>
@@ -92,6 +98,38 @@ export default function DishCard({ dish, onAddToCart, onCustomize }) {
           <p className="text-warmCream/80 text-xs sm:text-sm mt-2 leading-relaxed">
             {dish.description}
           </p>
+
+          {/* Tags gastronómicos y dietéticos */}
+          {dish.tags && dish.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {dish.tags.map((tag) => {
+                const tagMap = {
+                  'sin-gluten': { label: 'Sin Gluten', icon: '🌾' },
+                  'picante': { label: 'Picante', icon: '🌶️' },
+                  'especialidad': { label: 'Especialidad', icon: '⭐' },
+                  'para-compartir': { label: 'Para Compartir', icon: '👥' },
+                  'vegetariano': { label: 'Vegetariano', icon: '🥗' },
+                  'ligero': { label: 'Ligero', icon: '🥗' },
+                  'ahumado': { label: 'Ahumado', icon: '🪵' },
+                  'top-ventas': { label: 'Top Ventas', icon: '🔥' },
+                  'gourmet': { label: 'Gourmet', icon: '✨' },
+                  'artesanal': { label: 'Artesanal', icon: '🍻' },
+                  'bebida': { label: 'Bebida', icon: '🍺' }
+                };
+                const info = tagMap[tag];
+                if (!info) return null;
+                return (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] px-2 py-0.5 rounded-md bg-charcoal/80 border border-charcoalBorder text-warmMuted font-medium"
+                  >
+                    <span>{info.icon}</span>
+                    <span>{info.label}</span>
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
