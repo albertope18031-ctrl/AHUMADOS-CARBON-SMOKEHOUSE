@@ -6,7 +6,28 @@ export const RESTAURANT_INFO = {
   address: "Av. Gastronómica #104, Zona Poniente",
   hours: "Mar - Jue: 1:00 PM - 10:00 PM | Vie - Sáb: 1:00 PM - 11:30 PM | Dom: 1:00 PM - 8:00 PM",
   phoneDisplay: "662 417 5122",
-  whatsappNumber: "526624175122"
+  phoneRaw: "+526624175122",
+  whatsappNumber: "526624175122",
+  googleMapsUrl: "https://maps.google.com/?q=Av.+Gastronomica+104+Zona+Poniente",
+  wazeUrl: "https://waze.com/ul?q=Av.+Gastronomica+104+Zona+Poniente",
+  billingEmail: "facturacion@ahumadosycarbon.com",
+  socialLinks: {
+    instagram: "https://instagram.com/ahumadosycarbon",
+    facebook: "https://facebook.com/ahumadosycarbon",
+    tiktok: "https://tiktok.com/@ahumadosycarbon"
+  },
+  scheduleWeekly: [
+    { days: "Lunes", hours: "Cerrado (Curado de leña y ahumadores)", isOpen: false },
+    { days: "Martes a Jueves", hours: "1:00 PM - 10:00 PM", isOpen: true },
+    { days: "Viernes y Sábado", hours: "1:00 PM - 11:30 PM", isOpen: true, badge: "Noche de Fuego & Humo" },
+    { days: "Domingo", hours: "1:00 PM - 8:00 PM", isOpen: true, badge: "Domingo de Brasa" }
+  ],
+  transparencyPolicies: {
+    iva: "Todos nuestros precios incluyen IVA (precios netos en MXN).",
+    tip: "La propina es 100% voluntaria conforme a las disposiciones oficiales.",
+    noCommissions: "Sin cargos ocultos por servicio ni comisiones adicionales por pago con tarjeta.",
+    tablePayment: "El cobro se realiza directamente en tu mesa con terminal inalámbrica o en caja al retirarte."
+  }
 };
 
 export const CATEGORIES = [

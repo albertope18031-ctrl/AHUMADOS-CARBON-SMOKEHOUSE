@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Flame, Trash2, Plus, Minus, Send, ShoppingBag, Utensils, Clock, User, Hash, Lock } from 'lucide-react';
+import { X, Flame, Trash2, Plus, Minus, Send, ShoppingBag, Utensils, Clock, User, Hash, Lock, CreditCard, FileText, ChevronDown } from 'lucide-react';
 import { RESTAURANT_INFO } from '../data/menuData';
 
 export default function CartDrawer({
@@ -13,12 +13,14 @@ export default function CartDrawer({
   tableNumber = '',
   setTableNumber,
   isTableLocked = false,
-  onConfirmInAppOrder
+  onConfirmInAppOrder,
+  onOpenInvoiceModal
 }) {
   const [internalTableNumber, setInternalTableNumber] = useState(tableNumber || '');
   const [customerName, setCustomerName] = useState('');
   const [pickupTime, setPickupTime] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isInvoiceAccordionOpen, setIsInvoiceAccordionOpen] = useState(false);
 
   // Sincronizar tableNumber externo si cambia
   useEffect(() => {
@@ -427,7 +429,7 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
 
           {/* Resumen de cuenta & Botón de Enviar Pedido */}
           {cart.length > 0 && (
-            <div className="p-5 border-t border-charcoalBorder bg-charcoalCard/80 space-y-4">
+            <div className="p-5 border-t border-charcoalBorder bg-charcoalCard/85 space-y-4 max-h-[70vh] overflow-y-auto">
               <div className="space-y-1.5 text-xs text-warmMuted">
                 <div className="flex items-center justify-between">
                   <span>Subtotal de consumo</span>
@@ -443,8 +445,65 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
                     ${total.toFixed(2)} MXN
                   </span>
                 </div>
+
+                {/* 2. Políticas de Precios, Impuestos y Propina */}
+                <div className="pt-2.5 mt-2 border-t border-charcoalBorder/50 space-y-1 text-[11px] text-warmMuted/90">
+                  <div className="flex items-center gap-1.5 text-green-400/90 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" />
+                    <span>Todos nuestros precios incluyen IVA (precios netos en MXN).</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-badgeGold/90 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-badgeGold flex-shrink-0" />
+                    <span>La propina es 100% voluntaria conforme a las disposiciones oficiales.</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-warmCream/75 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-flameOrange flex-shrink-0" />
+                    <span>Sin cargos ocultos por servicio ni comisiones adicionales por pago con tarjeta.</span>
+                  </div>
+                </div>
               </div>
 
+              {/* 1. Transparencia de Métodos de Pago en el Carrito */}
+              <div className="border border-neutral-800 bg-neutral-900/60 rounded-xl p-3 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-warmCream flex items-center gap-1.5">
+                    <CreditCard className="w-3.5 h-3.5 text-flameOrange" />
+                    Formas de pago aceptadas
+                  </span>
+                  <span className="text-[10px] text-warmMuted font-medium bg-[#171717] px-2 py-0.5 rounded border border-charcoalBorder">
+                    En Mesa o Caja
+                  </span>
+                </div>
+
+                {/* Badges de métodos */}
+                <div className="grid grid-cols-3 gap-1.5 text-center">
+                  <div className="bg-[#171717] border border-charcoalBorder/70 rounded-lg p-2 flex flex-col items-center">
+                    <span className="text-base mb-0.5">💳</span>
+                    <span className="font-bold text-warmCream text-[11px] leading-none">Tarjetas</span>
+                    <span className="text-[9px] text-warmMuted mt-1 leading-tight">Visa, MC, AMEX</span>
+                  </div>
+                  <div className="bg-[#171717] border border-charcoalBorder/70 rounded-lg p-2 flex flex-col items-center">
+                    <span className="text-base mb-0.5">💵</span>
+                    <span className="font-bold text-warmCream text-[11px] leading-none">Efectivo</span>
+                    <span className="text-[9px] text-warmMuted mt-1 leading-tight">Llevamos cambio</span>
+                  </div>
+                  <div className="bg-[#171717] border border-charcoalBorder/70 rounded-lg p-2 flex flex-col items-center">
+                    <span className="text-base mb-0.5">📲</span>
+                    <span className="font-bold text-warmCream text-[11px] leading-none">SPEI</span>
+                    <span className="text-[9px] text-warmMuted mt-1 leading-tight">Transferencia</span>
+                  </div>
+                </div>
+
+                {/* Nota de cobro en mesa */}
+                <p className="text-[10.5px] text-warmCream/70 leading-relaxed flex items-start gap-1.5 bg-[#171717]/60 p-2 rounded-lg border border-charcoalBorder/40">
+                  <span className="text-flameOrange text-xs flex-shrink-0">ℹ️</span>
+                  <span>
+                    El cobro se realiza directamente en tu mesa con terminal inalámbrica o en caja al retirarte.
+                  </span>
+                </p>
+              </div>
+
+              {/* Botón de Confirmación de Pedido */}
               {orderType === 'mesa' ? (
                 <div>
                   <button
@@ -472,6 +531,56 @@ Por favor confirma la recepción de este pedido para comenzar la preparación.`;
                   </p>
                 </div>
               )}
+
+              {/* 3. Módulo de Facturación Electrónica (CFDI) */}
+              <div className="border border-charcoalBorder bg-[#141414] rounded-xl overflow-hidden text-xs">
+                <button
+                  type="button"
+                  onClick={() => setIsInvoiceAccordionOpen(!isInvoiceAccordionOpen)}
+                  className="w-full px-3 py-2.5 flex items-center justify-between text-left hover:bg-charcoalCard transition-colors cursor-pointer select-none"
+                >
+                  <span className="font-bold text-warmCream flex items-center gap-2 text-xs">
+                    <FileText className="w-3.5 h-3.5 text-badgeGold" />
+                    ¿Requieres Factura Electrónica (CFDI)?
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-warmMuted transition-transform duration-200 ${
+                      isInvoiceAccordionOpen ? 'rotate-180 text-flameOrange' : ''
+                    }`}
+                  />
+                </button>
+
+                {isInvoiceAccordionOpen && (
+                  <div className="p-3 border-t border-charcoalBorder/60 bg-[#101010] text-[11px] text-warmMuted space-y-2 animate-in fade-in duration-150">
+                    <p className="leading-relaxed">
+                      Puedes solicitar tu factura al momento de pagar indicando tu <strong className="text-warmCream font-bold">RFC</strong> al mesero en sala, o enviando foto de tu ticket con tus datos fiscales a nuestro correo o WhatsApp:
+                    </p>
+                    <div className="bg-[#171717] p-2 rounded-lg border border-charcoalBorder/80 space-y-1">
+                      <div className="flex items-center justify-between text-warmCream">
+                        <span className="text-warmMuted">Correo de Facturación:</span>
+                        <span className="font-mono text-badgeGold font-semibold text-[10.5px]">{RESTAURANT_INFO.billingEmail}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-warmCream">
+                        <span className="text-warmMuted">WhatsApp Facturación:</span>
+                        <span className="font-mono text-green-400 font-semibold">{RESTAURANT_INFO.phoneDisplay}</span>
+                      </div>
+                    </div>
+                    {onOpenInvoiceModal && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onOpenInvoiceModal();
+                        }}
+                        className="w-full py-1.5 px-2.5 rounded-lg bg-charcoalCard hover:bg-[#252525] border border-charcoalBorder text-warmCream text-center font-bold text-[11px] transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <FileText className="w-3 h-3 text-badgeGold" />
+                        <span>Ver requisitos completos y solicitar CFDI</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </aside>

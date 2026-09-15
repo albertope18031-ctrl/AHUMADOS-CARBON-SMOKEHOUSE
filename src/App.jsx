@@ -13,6 +13,7 @@ import RequestBillModal from './components/RequestBillModal';
 import ToastNotification from './components/ToastNotification';
 import Footer from './components/Footer';
 import MenuSearchAndFilters from './components/MenuSearchAndFilters';
+import InvoiceModal from './components/InvoiceModal';
 import { Receipt, Flame, RotateCcw } from 'lucide-react';
 import { CATEGORIES, DISHES } from './data/menuData';
 import { sendServiceNotification } from './utils/serviceNotifications';
@@ -70,6 +71,7 @@ export default function App() {
   });
 
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
 
   // 3. Módulo de Asistencia en Sala (Llamar mesero / Pedir cuenta / Toasts / Cooldown)
   const [isCallWaiterOpen, setIsCallWaiterOpen] = useState(false);
@@ -438,6 +440,7 @@ export default function App() {
         setTableNumber={setTableNumber}
         isTableLocked={isTableLocked}
         onConfirmInAppOrder={handleConfirmInAppOrder}
+        onOpenInvoiceModal={() => setIsInvoiceModalOpen(true)}
       />
 
       {/* Botonera Flotante de Asistencia en Sala (Llamar Mesero / Pedir Cuenta) */}
@@ -479,6 +482,12 @@ export default function App() {
         onConfirmBill={handleConfirmBill}
       />
 
+      {/* Modal de Solicitud de Factura Electrónica (CFDI 4.0) */}
+      <InvoiceModal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => setIsInvoiceModalOpen(false)}
+      />
+
       {/* Notificación Toast Inmediata en pantalla */}
       <ToastNotification
         toast={activeToast}
@@ -516,8 +525,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Pie de página con datos de contacto y sello de autoridad */}
-      <Footer />
+      {/* Pie de página con datos de contacto, enlaces interactivos y sello de autoridad */}
+      <Footer onOpenInvoiceModal={() => setIsInvoiceModalOpen(true)} />
     </div>
   );
 }
