@@ -405,7 +405,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-charcoal text-warmCream selection:bg-flameOrange selection:text-white flex flex-col justify-between">
+    <div className="min-h-screen bg-charcoal text-warmCream selection:bg-flameOrange selection:text-white flex flex-col">
       <div>
         {/* Encabezado fijo con detección de mesa y acceso a comanda activa */}
         <Header
@@ -449,10 +449,7 @@ export default function App() {
           />
 
           {/* Cuadrícula del catálogo con compensación ergonómica y acceso inmediato a platillos */}
-          <main 
-            className="max-w-7xl mx-auto px-4 pt-2 sm:pt-3 pb-32 sm:pb-36"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8.5rem)' }}
-          >
+          <main className="max-w-7xl mx-auto px-4 pt-2 sm:pt-3 pb-4 sm:pb-6">
           <div className="mb-3.5 sm:mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
             <div>
               <div className="flex items-center gap-2">
@@ -536,6 +533,8 @@ export default function App() {
             </div>
           )}
         </main>
+          {/* Pie de página minimalista */}
+          <Footer />
         </div>
       </div>
 
@@ -616,8 +615,6 @@ export default function App() {
         onNewRound={() => setIsSuccessModalOpen(false)}
       />
 
-      {/* Pie de página minimalista */}
-      <Footer />
     </div>
   );
 }
