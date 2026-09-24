@@ -180,59 +180,26 @@ export default function App() {
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  // Estados de búsqueda en tiempo real y chips de filtros rápidos
+  // Estados de búsqueda en tiempo real
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilters, setSelectedFilters] = useState([]);
-
-  const handleToggleFilter = (filterId) => {
-    setSelectedFilters((prev) =>
-      prev.includes(filterId)
-        ? prev.filter((id) => id !== filterId)
-        : [...prev, filterId]
-    );
-  };
 
   const handleClearAllFilters = () => {
     setSearchQuery('');
-    setSelectedFilters([]);
   };
 
-  const isFiltering = searchQuery.trim().length > 0 || selectedFilters.length > 0;
+  const isFiltering = searchQuery.trim().length > 0;
   const normalizedQuery = normalizeString(searchQuery);
 
-  // Filtrado de platillos según categoría activa o búsqueda global + filtros rápidos
+  // Filtrado de platillos según categoría activa o búsqueda global en toda la carta
   const filteredDishes = DISHES.filter((dish) => {
-    // Si no hay filtro ni búsqueda activa, filtrar por categoría activa
+    // Si no hay búsqueda activa, filtrar por categoría activa
     if (!isFiltering) {
       return dish.categoryId === activeCategory;
     }
 
-    // 1. Validar filtros rápidos seleccionados (todos los seleccionados deben coincidir)
-    const matchesQuickFilters = selectedFilters.every((filterId) => {
-      if (filterId === 'especialidad') {
-        return Boolean(dish.isSpecialty || dish.tags?.includes('especialidad'));
-      }
-      if (filterId === 'para-compartir') {
-        return Boolean(dish.tags?.includes('para-compartir'));
-      }
-      if (filterId === 'picante') {
-        return Boolean(dish.tags?.includes('picante'));
-      }
-      if (filterId === 'sin-gluten') {
-        return Boolean(dish.tags?.includes('sin-gluten'));
-      }
-      if (filterId === 'ligero') {
-        return Boolean(dish.tags?.includes('ligero') || dish.tags?.includes('vegetariano'));
-      }
-      return Boolean(dish.tags?.includes(filterId));
-    });
-
-    if (!matchesQuickFilters) return false;
-
-    // 2. Si no hay texto de búsqueda escrito, basta con que cumpla los quick filters
     if (!normalizedQuery) return true;
 
-    // 3. Validar coincidencia de texto en nombre, descripción, tags, badge y categoría
+    // Validar coincidencia de texto en nombre, descripción, tags, badge y categoría
     const nameNorm = normalizeString(dish.name);
     const descNorm = normalizeString(dish.description);
     const badgeNorm = normalizeString(dish.badge || '');
@@ -454,38 +421,38 @@ export default function App() {
           onOpenActiveTicket={() => setIsSuccessModalOpen(true)}
         />
 
-        {/* Hero visual adaptativo y ultra-compacto */}
-        <Hero orderMode={orderType} />
+        {/* Contenedor con compensación de altura del Header fijo */}
+        <div className="pt-[116px] md:pt-[90px]">
+          {/* Hero informativo: solo se muestra en modo 'Para Llevar' */}
+          <Hero orderMode={orderType} />
 
-        {/* Barra pegajosa con filtro de categorías deslizables (Acceso Inmediato Above the Fold) */}
-        <CategoryFilter
-          categories={CATEGORIES}
-          activeCategory={activeCategory}
-          onSelectCategory={(categoryId) => {
-            setActiveCategory(categoryId);
-            // Si hay filtros o búsqueda activa y el comensal toca una categoría, limpiamos para mostrar la categoría elegida
-            if (isFiltering) {
-              handleClearAllFilters();
-            }
-          }}
-        />
+          {/* Barra pegajosa con filtro de categorías deslizables */}
+          <CategoryFilter
+            categories={CATEGORIES}
+            activeCategory={activeCategory}
+            onSelectCategory={(categoryId) => {
+              setActiveCategory(categoryId);
+              // Si hay búsqueda activa y el comensal toca una categoría, limpiamos para mostrar la categoría elegida
+              if (isFiltering) {
+                handleClearAllFilters();
+              }
+            }}
+          />
 
-        {/* Barra de búsqueda en tiempo real y chips deslizables de filtros rápidos */}
-        <MenuSearchAndFilters
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          selectedFilters={selectedFilters}
-          onToggleFilter={handleToggleFilter}
-          onClearAll={handleClearAllFilters}
-          totalResults={filteredDishes.length}
-          isFiltering={isFiltering}
-        />
+          {/* Barra de búsqueda en tiempo real */}
+          <MenuSearchAndFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onClearAll={handleClearAllFilters}
+            totalResults={filteredDishes.length}
+            isFiltering={isFiltering}
+          />
 
-        {/* Cuadrícula del catálogo con compensación ergonómica y acceso inmediato a platillos */}
-        <main 
-          className="max-w-7xl mx-auto px-4 pt-3 sm:pt-4 pb-32 sm:pb-36"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8.5rem)' }}
-        >
+          {/* Cuadrícula del catálogo con compensación ergonómica y acceso inmediato a platillos */}
+          <main 
+            className="max-w-7xl mx-auto px-4 pt-2 sm:pt-3 pb-32 sm:pb-36"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8.5rem)' }}
+          >
           <div className="mb-3.5 sm:mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
             <div>
               <div className="flex items-center gap-2">
@@ -500,8 +467,8 @@ export default function App() {
               </div>
               <p className="text-xs text-warmMuted mt-0.5">
                 {isFiltering
-                  ? 'Búsqueda global en toda la carta por cortes, ingredientes y preferencias.'
-                  : 'Platillos preparados a la brasa y fuego indirecto con leña de encino y mezquite.'}
+                  ? 'Búsqueda en toda la carta por cortes, platillos y bebidas.'
+                  : 'Especialidades al fuego vivo y cocina artesanal de la casa.'}
               </p>
             </div>
 
@@ -552,10 +519,10 @@ export default function App() {
                 {searchQuery.trim() ? (
                   <span className="text-flameOrange font-bold">&ldquo;{searchQuery}&rdquo;</span>
                 ) : (
-                  'los filtros seleccionados'
+                  'tu búsqueda'
                 )}
                 .{' '}
-                Prueba buscando términos como <span className="text-warmCream font-semibold">&ldquo;brisket&rdquo;</span>, <span className="text-warmCream font-semibold">&ldquo;costillas&rdquo;</span>, <span className="text-warmCream font-semibold">&ldquo;papas&rdquo;</span>, <span className="text-warmCream font-semibold">&ldquo;burger&rdquo;</span> o restablece los filtros activos.
+                Prueba buscando términos como <span className="text-warmCream font-semibold">&ldquo;brisket&rdquo;</span>, <span className="text-warmCream font-semibold">&ldquo;costillas&rdquo;</span>, <span className="text-warmCream font-semibold">&ldquo;papas&rdquo;</span>, <span className="text-warmCream font-semibold">&ldquo;burger&rdquo;</span> o restablece la búsqueda.
               </p>
 
               <button
@@ -569,6 +536,7 @@ export default function App() {
             </div>
           )}
         </main>
+        </div>
       </div>
 
       {/* Modal de personalización de platillo */}
