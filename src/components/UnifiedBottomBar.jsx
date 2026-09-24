@@ -16,12 +16,11 @@ export default function UnifiedBottomBar({
   const isCooldownActive = cooldownSeconds > 0;
   const formattedTotal = Number(cartTotal || 0).toFixed(2);
 
-  // Estados del botón principal:
-  // Estado A: Armando pedido (cartCount > 0)
-  // Estado B: Comanda activa enviada a cocina (cartCount === 0 && Boolean(activeOrder))
-  // Estado Neutro: Carrito vacío sin comanda activa (cartCount === 0 && !activeOrder)
+  // Estados del botón principal y de cuenta:
+  // hasActiveOrder: Se ha realizado y confirmado un pedido activo en mesa
   const hasCartItems = cartCount > 0;
-  const hasActiveComanda = !hasCartItems && Boolean(activeOrder);
+  const hasActiveOrder = Boolean(activeOrder && activeOrder.items && activeOrder.items.length > 0);
+  const hasActiveComanda = !hasCartItems && hasActiveOrder;
 
   const handleMainButtonClick = () => {
     if (hasActiveComanda) {
@@ -68,15 +67,24 @@ export default function UnifiedBottomBar({
               )}
             </button>
 
-            {/* Botón 2: 🧾 Cuenta */}
+            {/* Botón 2: 🧾 Cuenta (solo se activa cuando se haya realizado un pedido) */}
             <button
               type="button"
-              onClick={onRequestBill}
-              className="h-12 sm:h-14 px-3 sm:px-4 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-warmCream border border-neutral-800 hover:border-emerald-500/50 active:scale-95 transition-all cursor-pointer shadow-md select-none"
-              title="Solicitar la cuenta a la mesa"
+              onClick={hasActiveOrder ? onRequestBill : undefined}
+              disabled={!hasActiveOrder}
+              className={`h-12 sm:h-14 px-3 sm:px-4 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all select-none shadow-md ${
+                hasActiveOrder
+                  ? 'bg-neutral-900 hover:bg-neutral-800 text-warmCream border border-neutral-800 hover:border-emerald-500/50 active:scale-95 cursor-pointer text-emerald-400/95'
+                  : 'bg-neutral-900/40 text-neutral-500 border border-neutral-800/40 cursor-not-allowed opacity-40'
+              }`}
+              title={
+                hasActiveOrder
+                  ? 'Solicitar la cuenta a la mesa'
+                  : 'Primero realiza un pedido para poder solicitar tu cuenta'
+              }
               aria-label="Pedir la Cuenta"
             >
-              <span className="text-base leading-none">🧾</span>
+              <span className={`text-base leading-none ${!hasActiveOrder ? 'grayscale opacity-60' : ''}`}>🧾</span>
               <span>Cuenta</span>
             </button>
           </div>

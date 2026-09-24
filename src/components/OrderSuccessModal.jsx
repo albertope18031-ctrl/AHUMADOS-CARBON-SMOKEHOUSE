@@ -1,5 +1,5 @@
-import React from 'react';
-import { CheckCircle2, Flame, Clock, MessageSquare, ArrowLeft, Utensils, Hash } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Flame, Clock, MessageSquare, ArrowLeft, Utensils, X } from 'lucide-react';
 import { RESTAURANT_INFO } from '../data/menuData';
 import { cleanTableNumber } from '../utils/textUtils';
 
@@ -9,6 +9,17 @@ export default function OrderSuccessModal({
   onClose,
   onNewRound
 }) {
+  // Manejo de la tecla Escape para cerrar el modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !order) return null;
 
   const handleSendWhatsAppCopy = () => {
@@ -50,10 +61,26 @@ Comanda registrada en mesa con éxito. Guarde este mensaje como comprobante pers
       role="dialog"
       aria-modal="true"
       aria-labelledby="success-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && onClose) {
+          onClose();
+        }
+      }}
     >
       <div className="bg-charcoalCard border border-charcoalBorder rounded-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-5 sm:p-7 text-warmCream shadow-2xl relative my-auto">
+        {/* Botón de cierre visible en la esquina superior derecha */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-2 rounded-full bg-neutral-900/90 hover:bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-white transition-all cursor-pointer z-20 shadow-md active:scale-90"
+          aria-label="Cerrar comanda y regresar al sitio web"
+          title="Cerrar y volver al sitio web"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
         {/* Badge superior de estado en cocina */}
-        <div className="text-center mb-4">
+        <div className="text-center mb-4 pr-6 sm:pr-0">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold tracking-wide mb-3 animate-pulse">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
             <span>🟢 Comanda Recibida en Cocina</span>
@@ -159,18 +186,8 @@ Comanda registrada en mesa con éxito. Guarde este mensaje como comprobante pers
           </div>
         </div>
 
-        {/* Botones de acción */}
+        {/* Botones de acción y retorno al sitio web */}
         <div className="space-y-2.5">
-          {/* Botón secundario: Enviar copia a WhatsApp (Opcional) */}
-          <button
-            type="button"
-            onClick={handleSendWhatsAppCopy}
-            className="w-full bg-[#181818] hover:bg-[#222222] border border-charcoalBorder hover:border-flameOrange/50 text-warmCream font-semibold py-3 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
-          >
-            <MessageSquare className="w-4 h-4 text-emerald-400" />
-            <span>📲 Enviar copia de mi ticket a WhatsApp</span>
-          </button>
-
           {/* Botón principal: Pedir algo más para la Mesa X */}
           <button
             type="button"
@@ -185,6 +202,26 @@ Comanda registrada en mesa con éxito. Guarde este mensaje como comprobante pers
           >
             <Utensils className="w-4 h-4" />
             <span>Pedir algo más para la Mesa {cleanTableNumber(order.tableNumber)}</span>
+          </button>
+
+          {/* Botón explícito: Volver al Menú / Regresar al Sitio Web */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-neutral-600 active:scale-[0.98] text-warmCream font-bold py-3 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+          >
+            <ArrowLeft className="w-4 h-4 text-flameOrange" />
+            <span>Volver al Menú / Regresar al Sitio Web</span>
+          </button>
+
+          {/* Botón secundario: Enviar copia a WhatsApp (Opcional) */}
+          <button
+            type="button"
+            onClick={handleSendWhatsAppCopy}
+            className="w-full bg-[#141414] hover:bg-[#1f1f1f] border border-charcoalBorder text-warmCream/80 hover:text-warmCream font-medium py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+            <span>📲 Enviar copia de mi ticket a WhatsApp</span>
           </button>
         </div>
       </div>
