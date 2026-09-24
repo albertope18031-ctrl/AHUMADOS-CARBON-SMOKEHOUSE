@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Flame, Clock, MessageSquare, ArrowLeft, Utensils, X } from 'lucide-react';
+import { Flame, Clock, MessageSquare, ArrowLeft, Utensils, X, RotateCcw } from 'lucide-react';
 import { RESTAURANT_INFO } from '../data/menuData';
 import { cleanTableNumber } from '../utils/textUtils';
 
@@ -7,7 +7,8 @@ export default function OrderSuccessModal({
   isOpen,
   order,
   onClose,
-  onNewRound
+  onNewRound,
+  onResetOrder
 }) {
   // Manejo de la tecla Escape para cerrar el modal
   useEffect(() => {
@@ -223,6 +224,24 @@ Comanda registrada en mesa con éxito. Guarde este mensaje como comprobante pers
             <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
             <span>📲 Enviar copia de mi ticket a WhatsApp</span>
           </button>
+
+          {/* Opción para finalizar visita o reiniciar para pruebas */}
+          {onResetOrder && (
+            <div className="pt-2 text-center border-t border-charcoalBorder/50">
+              <button
+                type="button"
+                onClick={() => {
+                  onResetOrder();
+                  onClose();
+                }}
+                className="text-xs text-neutral-400 hover:text-red-400 transition-colors inline-flex items-center gap-1.5 cursor-pointer py-1 px-3 rounded-lg hover:bg-neutral-800/60"
+                title="Finalizar visita y restablecer comanda a $0.00 MXN para pruebas"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Finalizar Visita / Limpiar Comanda de Prueba</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

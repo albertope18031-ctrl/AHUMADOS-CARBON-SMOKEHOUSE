@@ -613,6 +613,7 @@ export default function App() {
         order={activeConfirmedOrder}
         onClose={() => setIsSuccessModalOpen(false)}
         onNewRound={() => setIsSuccessModalOpen(false)}
+        onResetOrder={handleResetAccount}
       />
 
     </div>
