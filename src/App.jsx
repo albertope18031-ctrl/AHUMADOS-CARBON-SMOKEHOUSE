@@ -616,8 +616,8 @@ export default function App() {
         onNewRound={() => setIsSuccessModalOpen(false)}
       />
 
-      {/* Pie de página con datos de contacto, enlaces interactivos y sello de autoridad */}
-      <Footer onOpenInvoiceModal={() => setIsInvoiceModalOpen(true)} />
+      {/* Pie de página minimalista */}
+      <Footer />
     </div>
   );
 }
